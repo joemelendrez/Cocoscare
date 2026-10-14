@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import RecipeCard from "@/components/RecipeCard";
 import { ProductEmbed } from "@/components/Cards";
@@ -33,8 +33,9 @@ const STATUSES = [
   { value: "published", label: "Live" },
 ];
 
-// Recipes and picks to choose from, drafts included.
-function useLibrary(supabase) {
+// Recipes and picks to choose from, drafts included. `onLoad` runs once
+// with them, after the first load.
+function useLibrary(supabase, onLoad) {
   const [lib, setLib] = useState({ recipes: [], products: [], loaded: false });
   useEffect(() => {
     let live = true;
@@ -42,20 +43,37 @@ function useLibrary(supabase) {
       supabase.from("recipes").select("*").order("updated_at", { ascending: false }),
       supabase.from("products").select("id, slug, name, note, image_url, url, price_label, section, color, status").order("name"),
     ]).then(([r, p]) => {
-      if (live) setLib({ recipes: r.data || [], products: p.data || [], loaded: true });
+      if (!live) return;
+      setLib({ recipes: r.data || [], products: p.data || [], loaded: true });
+      onLoad?.({ recipes: r.data || [], products: p.data || [] });
     });
     return () => {
       live = false;
     };
+    // onLoad is only for the first load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
   return lib;
 }
 
-function PostForm({ initial, rec }) {
+function PostForm({ initial, rec, startRecipeId }) {
   const { supabase } = useAdmin();
-  const lib = useLibrary(supabase);
-  const [form, setForm] = useState(() => ({ ...BLANK, ...initial, excerpt: initial.excerpt || "", body: initial.body || "" }));
+  const [form, setForm] = useState(() => ({ ...BLANK, ...initial, excerpt: initial.excerpt || "", body: initial.body || "", recipe_id: initial.recipe_id || startRecipeId || null }));
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
+  // A new post started from a recipe ("Write a post with this recipe")
+  // borrows its name, summary and photo until they're changed.
+  const lib = useLibrary(supabase, ({ recipes }) => {
+    const r = startRecipeId && recipes.find((x) => x.id === startRecipeId);
+    if (!r) return;
+    setForm((f) => ({
+      ...f,
+      title: f.title || r.title,
+      slug: f.slug || slugify(r.title),
+      category: "recipes",
+      excerpt: f.excerpt || r.summary || "",
+      cover_url: f.cover_url || r.image_url || null,
+    }));
+  });
   const [picking, setPicking] = useState(null); // "product" | "recipe" | null
   const [tab, setTab] = useState("write");
   const cardInserterRef = useRef(null);
@@ -124,7 +142,7 @@ function PostForm({ initial, rec }) {
           <Link href="/admin" className="text-sm font-semibold text-ink/60 hover:underline">
             ← Posts
           </Link>
-          <h1 className="font-display text-4xl tracking-wide">{form.title || "Post"}</h1>
+          <h1 className="font-display text-4xl tracking-wide">{form.title || (rec.isNew ? "New post" : "Post")}</h1>
           {!rec.isNew && (
             <p className="mt-1 flex items-center gap-2 text-sm text-ink/60">
               Saved as <StatusPill status={rec.record.status} />
@@ -279,18 +297,9 @@ function PostForm({ initial, rec }) {
 
 export default function PostEditor() {
   const { id } = useParams();
+  const startRecipeId = useSearchParams().get("recipe");
   const rec = useRecord("posts", id, BLANK, "/admin/posts");
-  // Posts start in Handoff Hero; this page finishes them.
-  if (rec.isNew)
-    return (
-      <Card title="Posts start in Handoff Hero">
-        <p className="text-ink/75">Write it there and send it to your blog as a draft. It then shows on the Posts page under &ldquo;From Handoff Hero&rdquo;, ready to finish here.</p>
-        <Link href="/admin" className="mt-3 inline-block font-semibold text-pink-deep underline">
-          ← Posts
-        </Link>
-      </Card>
-    );
   if (rec.missing) return <Notice notice={{ type: "error", text: "That post doesn't exist (it may have been deleted)." }} />;
   if (!rec.record) return <p className="animate-pulse font-semibold text-ink/60">Loading…</p>;
-  return <PostForm key={rec.record.id || "new"} initial={rec.record} rec={rec} />;
+  return <PostForm key={rec.record.id || "new"} initial={rec.record} rec={rec} startRecipeId={rec.isNew ? startRecipeId : null} />;
 }

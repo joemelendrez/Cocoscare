@@ -124,7 +124,10 @@ function RecipeForm({ initial, rec }) {
   const save = async (status = form.status) => {
     const values = { ...toRecipe({ ...form, status }) };
     const saved = await rec.save(values, {
-      message: status === "published" ? "Saved and live on any post that uses it." : "Saved!",
+      message:
+        status === "published"
+          ? "Saved and live. Recipes show on the blog inside a post: use “Write a post with this recipe” to put it in one."
+          : "Saved!",
       paths: ["/blog"],
     });
     if (saved) set({ status: saved.status });
@@ -139,6 +142,11 @@ function RecipeForm({ initial, rec }) {
             ← Recipes
           </Link>
           <h1 className="font-display text-4xl tracking-wide">{rec.isNew ? "New recipe" : form.title || "Recipe"}</h1>
+          {!rec.isNew && (
+            <Link href={`/admin/posts/new?recipe=${rec.record.id}`} className="mt-1 inline-block text-sm font-semibold text-pink-deep hover:underline">
+              Write a post with this recipe →
+            </Link>
+          )}
         </div>
         <Segmented
           label="Status"
