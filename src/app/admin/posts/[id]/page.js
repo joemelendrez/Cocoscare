@@ -11,6 +11,7 @@ import { Button, Card, DeleteButton, Field, Notice, PhotoInput, Segmented, Selec
 import { CATEGORIES } from "@/lib/content";
 import { cardToken, productSlugsIn, recipeSlugsIn } from "@/lib/data";
 import { bodySegments } from "@/lib/postBody";
+import FaqBlock from "@/components/FaqBlock";
 import { slugify } from "@/lib/recipe";
 
 const BLANK = {
@@ -218,6 +219,19 @@ function PostForm({ initial, rec }) {
               <Button variant="ghost" className="py-1.5 text-sm" onClick={() => setPicking((v) => (v === "recipe" ? null : "recipe"))} aria-expanded={picking === "recipe"}>
                 + Recipe card
               </Button>
+              <Button
+                variant="ghost"
+                className="py-1.5 text-sm"
+                onClick={() =>
+                  insert(
+                    /^##\s+(frequently asked questions|faqs?)\b/im.test(form.body)
+                      ? "### Your question?\n\nThe answer in a sentence or two."
+                      : "## Frequently Asked Questions\n\n### Your question?\n\nThe answer in a sentence or two.",
+                  )
+                }
+              >
+                + FAQ
+              </Button>
               <input
                 ref={photoRef}
                 type="file"
@@ -288,6 +302,8 @@ function PostForm({ initial, rec }) {
               {segments.map((s, i) =>
                 s.type === "html" ? (
                   <div key={i} className="post-body" dangerouslySetInnerHTML={{ __html: s.html }} />
+                ) : s.type === "faq" ? (
+                  <FaqBlock key={i} title={s.title} items={s.items} />
                 ) : s.type === "recipe" ? (
                   <RecipeCard key={i} recipe={s.recipe} anchor={false} />
                 ) : (

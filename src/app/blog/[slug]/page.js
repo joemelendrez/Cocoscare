@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import FaqBlock from "@/components/FaqBlock";
 import RecipeCard from "@/components/RecipeCard";
 import { ProductEmbed } from "@/components/Cards";
 import { CategoryIcon, Heart } from "@/components/Doodles";
 import { COLOR, SITE, categoryFor } from "@/lib/content";
 import { getPost, getPostSlugs, readingMinutes } from "@/lib/data";
-import { bodySegments } from "@/lib/postBody";
+import { bodySegments, faqSchema } from "@/lib/postBody";
 import { recipeSchema } from "@/lib/recipe";
 
 export const revalidate = 60;
@@ -60,6 +61,7 @@ export default async function PostPage({ params }) {
   // at the end, or else the first recipe card in the post.
   const recipe = post.recipe || post.recipes[0] || null;
   // "Jump to recipe" goes to its first card in the post, else the end one.
+  const faq = faqSchema(segments);
   const anchorAt = segments.findIndex((s) => s.type === "recipe" && s.recipe.id === recipe?.id);
   const date = post.published_at
     ? new Date(post.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
@@ -84,6 +86,7 @@ export default async function PostPage({ params }) {
           mainEntityOfPage: url,
         }}
       />
+      {faq && <JsonLd item={faq} />}
       {recipe && <JsonLd item={recipeSchema(recipe, { url, author: "Coco", published: post.published_at })} />}
 
       <header className={`dots-ink relative overflow-hidden border-b-[3px] border-ink pb-14 pt-32 sm:pt-36 ${COLOR[cat.color].bg}`}>
@@ -128,6 +131,10 @@ export default async function PostPage({ params }) {
           {segments.map((s, i) =>
             s.type === "html" ? (
               <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} className="post-body" />
+            ) : s.type === "faq" ? (
+              <div key={i} className="py-4">
+                <FaqBlock title={s.title} items={s.items} />
+              </div>
             ) : s.type === "recipe" ? (
               <div key={i} className="py-6 lg:-mx-24">
                 <RecipeCard recipe={s.recipe} pinUrl={pinUrl} anchor={i === anchorAt} />
