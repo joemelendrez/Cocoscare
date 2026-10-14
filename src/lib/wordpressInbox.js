@@ -4,14 +4,21 @@ import { slugify } from "@/lib/recipe";
 
 // Reads posts Coco sent from Handoff Hero to the WordPress subsite,
 // drafts included, so /admin can pull one in and finish it there. Drafts
-// aren't public, so this needs an Application Password (wp-admin › Users ›
-// Profile) in WORDPRESS_USERNAME / WORDPRESS_APP_PASSWORD. Server only.
+// aren't public, so this needs a WordPress Application Password: the one
+// saved by /admin's "Connect WordPress" (the wordpress_connection table), or
+// WORDPRESS_USERNAME / WORDPRESS_APP_PASSWORD on Netlify. Server only.
 
-const SITE = (process.env.WORDPRESS_SITE_URL || "https://cms.habitnova.com/cocoscare").replace(/\/+$/, "");
-const USER = process.env.WORDPRESS_USERNAME;
-const PASSWORD = process.env.WORDPRESS_APP_PASSWORD;
+export const WORDPRESS_SITE = (process.env.WORDPRESS_SITE_URL || "https://cms.habitnova.com/cocoscare").replace(/\/+$/, "");
 
-export const inboxConfigured = Boolean(USER && PASSWORD);
+// The login to use: the connected one, else the Netlify env vars, else null.
+// `db` is the admin's own Supabase client, so RLS guards the saved password.
+export async function wordpressLogin(db) {
+  const { data } = await db.from("wordpress_connection").select("site_url, username, app_password").maybeSingle();
+  if (data) return { site: data.site_url.replace(/\/+$/, ""), user: data.username, password: data.app_password, saved: true };
+  const user = process.env.WORDPRESS_USERNAME;
+  const password = process.env.WORDPRESS_APP_PASSWORD;
+  return user && password ? { site: WORDPRESS_SITE, user, password, saved: false } : null;
+}
 
 const STATUS = { draft: "draft", pending: "draft", future: "scheduled", publish: "live", private: "draft" };
 
@@ -19,9 +26,9 @@ const STATUS = { draft: "draft", pending: "draft", future: "scheduled", publish:
 // origin, and http → https counts as one, so WordPress would see a signed-out
 // request. Redirects within the same host are followed here with the login
 // kept; anything else is refused.
-async function request(path) {
-  const auth = Buffer.from(`${USER}:${PASSWORD}`).toString("base64");
-  let url = new URL(`${SITE}/wp-json/wp/v2/${path}`);
+async function request(login, path) {
+  const auth = Buffer.from(`${login.user}:${login.password}`).toString("base64");
+  let url = new URL(`${login.site}/wp-json/wp/v2/${path}`);
   for (let hops = 0; hops < 4; hops++) {
     const res = await fetch(url, {
       headers: { Authorization: `Basic ${auth}` },
@@ -33,13 +40,13 @@ async function request(path) {
     if (!location) return res;
     const next = new URL(location, url);
     if (next.hostname !== url.hostname || next.protocol !== "https:") {
-      const error = new Error(`WordPress redirected to ${next.origin}${next.pathname}. Set WORDPRESS_SITE_URL on Netlify to the site's real https address, then redeploy.`);
+      const error = new Error(`WordPress redirected to ${next.origin}${next.pathname}. Connect WordPress again from its real https address.`);
       error.status = 502;
       throw error;
     }
     url = next;
   }
-  const error = new Error("WordPress kept redirecting. Check WORDPRESS_SITE_URL on Netlify.");
+  const error = new Error("WordPress kept redirecting. Try connecting WordPress again.");
   error.status = 502;
   throw error;
 }
@@ -48,26 +55,41 @@ async function request(path) {
 // asking can't edit posts. That's either a signed-in user without a role on
 // this subsite, or a request it treated as signed out (the login header never
 // reached it). Asking who we are tells the two apart.
-async function cantSeeDraftsMessage() {
-  const me = await request("users/me?context=edit");
+async function cantSeeDraftsMessage(login) {
+  const me = await request(login, "users/me?context=edit");
   const who = me?.ok ? await me.json().catch(() => null) : null;
   if (!who) {
     return "WordPress treated the request as signed out, so it can't show drafts. The login never reached it. Most often the web server in front of WordPress drops the Authorization header (on Apache, add CGIPassAuth On to the WordPress .htaccess), or Application Passwords are turned off for this site.";
   }
   const roles = Array.isArray(who.roles) && who.roles.length ? who.roles.join(", ") : "no role";
-  return `WordPress signed in as ${who.slug || who.name || USER} (${roles} on this site), but that user can't see drafts here. Make them an Editor or Administrator on the Coco's Care site.`;
+  return `WordPress signed in as ${who.slug || who.name || login.user} (${roles} on this site), but that user can't see drafts here. Make them an Editor or Administrator on the Coco's Care site.`;
 }
 
-async function wp(path) {
-  const res = await request(path);
+// Checks a login WordPress just handed back before it's saved: it must sign
+// in and be allowed to see drafts. Returns the WordPress username.
+export async function checkLogin(login) {
+  const res = await request(login, "users/me?context=edit");
+  const who = res.ok ? await res.json().catch(() => null) : null;
+  if (!who) {
+    throw Object.assign(new Error("WordPress didn't accept that login. Try Connect WordPress again."), { status: 502 });
+  }
+  const caps = who.capabilities || {};
+  if (!caps.edit_posts && !caps.edit_others_posts) {
+    throw Object.assign(new Error(`${who.slug || login.user} can't see drafts on this site. Connect with an Editor or Administrator account.`), { status: 502 });
+  }
+  return who.slug || login.user;
+}
+
+async function wp(login, path) {
+  const res = await request(login, path);
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     const cantSeeDrafts = detail.code === "rest_invalid_param" && detail.data?.params?.status;
     const error = new Error(
       res.status === 401 || res.status === 403
-        ? "WordPress didn't accept the login. Check WORDPRESS_USERNAME and WORDPRESS_APP_PASSWORD."
+        ? "WordPress didn't accept the login. Connect WordPress again."
         : cantSeeDrafts
-          ? await cantSeeDraftsMessage()
+          ? await cantSeeDraftsMessage(login)
           : detail.message || `WordPress answered ${res.status}`,
     );
     error.status = res.status === 404 ? 404 : 502;
@@ -80,8 +102,8 @@ const plain = (html = "") => decodeEntities(html.replace(/<[^>]*>/g, " ")).repla
 const titleOf = (p) => decodeEntities(p.title?.raw ?? p.title?.rendered ?? "").trim() || "Untitled";
 
 // The newest 50 posts, any state but trashed.
-export async function listInbox() {
-  const posts = await wp("posts?status=draft,pending,future,publish,private&context=edit&per_page=50&orderby=modified&_fields=id,status,title,modified_gmt");
+export async function listInbox(login) {
+  const posts = await wp(login, "posts?status=draft,pending,future,publish,private&context=edit&per_page=50&orderby=modified&_fields=id,status,title,modified_gmt");
   return posts.map((p) => ({
     id: p.id,
     title: titleOf(p),
@@ -117,8 +139,8 @@ function splitMeta(markdown) {
 }
 
 // One post, ready to save as a Coco's Care post.
-export async function postForImport(id) {
-  const p = await wp(`posts/${Number(id)}?context=edit&_embed=wp:featuredmedia,wp:term`);
+export async function postForImport(login, id) {
+  const p = await wp(login, `posts/${Number(id)}?context=edit&_embed=wp:featuredmedia,wp:term`);
   const html = p.content?.rendered || "";
   const markdown = turndown
     .turndown(html.replace(/<h1[^>]*>[\s\S]*?<\/h1>/gi, ""))
