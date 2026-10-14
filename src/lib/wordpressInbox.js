@@ -15,24 +15,39 @@ export const inboxConfigured = Boolean(USER && PASSWORD);
 
 const STATUS = { draft: "draft", pending: "draft", future: "scheduled", publish: "live", private: "draft" };
 
-async function wp(path) {
+function request(path) {
   const auth = Buffer.from(`${USER}:${PASSWORD}`).toString("base64");
-  const res = await fetch(`${SITE}/wp-json/wp/v2/${path}`, {
+  return fetch(`${SITE}/wp-json/wp/v2/${path}`, {
     headers: { Authorization: `Basic ${auth}` },
     cache: "no-store",
     signal: AbortSignal.timeout(10000),
   });
+}
+
+// WordPress answers "Invalid parameter(s): status" when whoever it thinks is
+// asking can't edit posts. That's either a signed-in user without a role on
+// this subsite, or a request it treated as signed out (the login header never
+// reached it). Asking who we are tells the two apart.
+async function cantSeeDraftsMessage() {
+  const me = await request("users/me?context=edit").catch(() => null);
+  const who = me?.ok ? await me.json().catch(() => null) : null;
+  if (!who) {
+    return "WordPress treated the request as signed out, so it can't show drafts. The login never reached it: check WORDPRESS_USERNAME (the WordPress username, not the Application Password's name) and WORDPRESS_APP_PASSWORD on Netlify, then redeploy.";
+  }
+  const roles = Array.isArray(who.roles) && who.roles.length ? who.roles.join(", ") : "no role";
+  return `WordPress signed in as ${who.slug || who.name || USER} (${roles} on this site), but that user can't see drafts here. Make them an Editor or Administrator on the Coco's Care site.`;
+}
+
+async function wp(path) {
+  const res = await request(path);
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
-    // WordPress answers "Invalid parameter(s): status" when the login works
-    // but that user can't edit posts on this subsite (on a multisite, a
-    // network user who isn't added to the site has no role there).
     const cantSeeDrafts = detail.code === "rest_invalid_param" && detail.data?.params?.status;
     const error = new Error(
       res.status === 401 || res.status === 403
         ? "WordPress didn't accept the login. Check WORDPRESS_USERNAME and WORDPRESS_APP_PASSWORD."
         : cantSeeDrafts
-          ? `WordPress signed in as ${USER}, but that user can't see drafts on this site. Add them to the Coco's Care site as an Editor or Administrator, or use an Application Password from a user who is.`
+          ? await cantSeeDraftsMessage()
           : detail.message || `WordPress answered ${res.status}`,
     );
     error.status = res.status === 404 ? 404 : 502;
