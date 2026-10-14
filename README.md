@@ -17,12 +17,14 @@ npm run dev
 
 The blog merges two sources:
 
-- **Quick posts** from Handoff Hero, saved as drafts on the WordPress subsite (`cms.habitnova.com/cocoscare`). Published ones show on the blog within a minute, read over WPGraphQL (`src/lib/wordpress.js`; `WORDPRESS_GRAPHQL_URL` overrides the address, `off` turns it off). A line of `{{product:link-name}}` or `{{recipe:link-name}}` in a Quick post shows that shop card or recipe card.
-- **Posts written in `/admin`**, plus all recipes and shop picks, in Coco's own Supabase project. If both sources use the same link name, the `/admin` post wins.
+- **Posts in Coco's own Supabase project**, plus all recipes and shop picks, edited in `/admin`.
+- **Live posts on the WordPress subsite** (`cms.habitnova.com/cocoscare`), read over WPGraphQL (`src/lib/wordpress.js`; `WORDPRESS_GRAPHQL_URL` overrides the address, `off` turns it off). A line of `{{product:link-name}}` or `{{recipe:link-name}}` in one shows that shop card or recipe card. A WordPress post stops showing once its `/admin` copy is live (same link name, or pulled in from it).
+
+How a post is made: Coco writes it in her Handoff Hero account (topics, SEO tools, the Generator) and sends it to the WordPress subsite as a **draft**. `/admin` › Posts lists those under "From Handoff Hero"; **Finish here** copies one into a draft post here (Markdown, cover, excerpt from the meta description, category), where she adds photos, product cards and a recipe, then marks it ready for review. Posts can't be started in `/admin`. The list needs `WORDPRESS_USERNAME` and `WORDPRESS_APP_PASSWORD` (an Application Password from wp-admin › Users › Profile) on Netlify, since drafts aren't public (`src/lib/wordpressInbox.js`, `/api/admin/wordpress`, admins only).
 
 `/admin` has:
 
-- **Recipes**: ingredients (paste a list or add rows), steps with optional timers (guessed from "bake 20 minutes"), servings, tips and a live preview. "Make it a blog post" starts a draft post with the recipe card attached.
+- **Recipes**: ingredients (paste a list or add rows), steps with optional timers (guessed from "bake 20 minutes"), servings, tips and a live preview. Attach one to a post with the recipe picker in the post editor.
 - **Shop**: picks with an https affiliate link, price, section, card color and a home-page switch. Any post can show one as a card with a line of `{{product:link-name}}`.
 - **Posts**: Markdown with toolbar buttons for headings, photos and product cards, a recipe picker, and Draft → Ready for review → Live. Putting a post live also puts its recipe and picks live.
 

@@ -128,7 +128,9 @@ function useWakeLock() {
   return { supported, on, toggle: () => setOn((v) => !v) };
 }
 
-export default function RecipeCard({ recipe, pinUrl }) {
+// `anchor` gives the card the #recipe id "Jump to recipe" scrolls to; only
+// one card on a page should have it.
+export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
   const steps = recipe.steps || [];
   const ingredients = recipe.ingredients || [];
   const base = recipe.servings || 1;
@@ -149,7 +151,7 @@ export default function RecipeCard({ recipe, pinUrl }) {
     });
 
   return (
-    <section id="recipe" aria-label={`Recipe: ${recipe.title}`} className="recipe-card sticker scroll-mt-28 overflow-hidden rounded-[2rem] bg-paper">
+    <section id={anchor ? "recipe" : undefined} aria-label={`Recipe: ${recipe.title}`} className="recipe-card sticker scroll-mt-28 overflow-hidden rounded-[2rem] bg-paper">
       <div className="dots relative border-b-[3px] border-ink bg-pink p-6 text-paper sm:p-8">
         <span className="sticker-sm inline-flex -rotate-2 items-center gap-1.5 rounded-full bg-butter px-3 py-1 font-display tracking-wide text-ink">
           <Sparkle className="h-4 w-4" fill="var(--paper)" /> Recipe card

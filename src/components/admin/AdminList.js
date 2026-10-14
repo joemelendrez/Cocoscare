@@ -6,8 +6,9 @@ import { useAdmin } from "@/components/admin/AdminShell";
 import { Notice, Segmented, StatusPill } from "@/components/admin/AdminUI";
 
 // One list screen for posts, recipes and products: filter by status, tap a
-// row to edit, "New" to start one.
-export default function AdminList({ table, title, newHref, newLabel, select, statuses, render, emptyText, intro }) {
+// row to edit, "New" to start one (left out when there's no newLabel).
+// `action(row)` adds a button beside each row (outside its link).
+export default function AdminList({ table, title, newHref, newLabel, select, statuses, render, action, emptyText, intro, children }) {
   const { supabase } = useAdmin();
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
@@ -40,13 +41,17 @@ export default function AdminList({ table, title, newHref, newLabel, select, sta
           <h1 className="font-display text-4xl tracking-wide">{title}</h1>
           {intro && <p className="mt-1 text-ink/70">{intro}</p>}
         </div>
-        <Link
-          href={newHref}
-          className="rounded-full border-[2.5px] border-ink bg-pink px-5 py-2.5 font-display tracking-wide text-paper shadow-[3px_3px_0_var(--ink)] transition-transform hover:-translate-y-0.5"
-        >
-          + {newLabel}
-        </Link>
+        {newLabel && (
+          <Link
+            href={newHref}
+            className="rounded-full border-[2.5px] border-ink bg-pink px-5 py-2.5 font-display tracking-wide text-paper shadow-[3px_3px_0_var(--ink)] transition-transform hover:-translate-y-0.5"
+          >
+            + {newLabel}
+          </Link>
+        )}
       </div>
+
+      {children}
 
       <Segmented
         label="Filter"
@@ -71,14 +76,15 @@ export default function AdminList({ table, title, newHref, newLabel, select, sta
       ) : (
         <ul className="space-y-3">
           {shown.map((row) => (
-            <li key={row.id}>
+            <li key={row.id} className="flex items-center gap-2">
               <Link
                 href={`${newHref.replace(/\/new$/, "")}/${row.id}`}
-                className="flex items-center gap-4 rounded-[1.5rem] border-[3px] border-ink bg-paper p-3 pr-5 transition-transform hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--ink)]"
+                className="flex min-w-0 flex-1 items-center gap-4 rounded-[1.5rem] border-[3px] border-ink bg-paper p-3 pr-5 transition-transform hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--ink)]"
               >
                 {render(row)}
                 <StatusPill status={row.status} />
               </Link>
+              {action?.(row)}
             </li>
           ))}
         </ul>

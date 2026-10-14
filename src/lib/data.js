@@ -3,7 +3,8 @@ import { SAMPLE_PICKS, SAMPLE_POSTS } from "@/lib/content";
 import { getWordpressPost, getWordpressPosts, stripTags, wordpressConfigured } from "@/lib/wordpress";
 
 // Reads published content: posts written in /admin and recipes and picks
-// from Coco's Supabase project, plus Quick posts from WordPress. With
+// from Coco's Supabase project, plus live posts sent from Handoff Hero to
+// WordPress. With
 // neither (or if both reads fail) pages show the sample content instead,
 // marked "Sample".
 
@@ -17,7 +18,7 @@ export function readingMinutes(text = "", { html = false } = {}) {
   return Math.max(1, Math.round(words / 220));
 }
 
-const POST_FIELDS = "slug, title, category, excerpt, cover_url, published_at, body";
+const POST_FIELDS = "slug, title, category, excerpt, cover_url, published_at, body, wordpress_id";
 
 function toCard(row) {
   return {
@@ -28,6 +29,7 @@ function toCard(row) {
     cover_url: row.cover_url,
     published_at: row.published_at,
     minutes: readingMinutes(row.body),
+    wordpress_id: row.wordpress_id,
   };
 }
 
@@ -44,7 +46,15 @@ async function supabasePosts(limit, category) {
   return data.map(toCard);
 }
 
-// Both sources, newest first. A slug used in both shows the /admin post.
+// A WordPress post is hidden once its /admin copy is live: same slug, or
+// pulled in from it (wordpress_id), even if the slug was changed since.
+function notCopied(own) {
+  const slugs = new Set(own.map((p) => p.slug));
+  const ids = new Set(own.map((p) => p.wordpress_id).filter(Boolean));
+  return (p) => !slugs.has(p.slug) && !ids.has(p.wordpress_id);
+}
+
+// Both sources, newest first.
 export async function getPosts({ limit = 60, category } = {}) {
   const [own, wp] = await Promise.all([supabasePosts(limit, category), wordpressConfigured ? getWordpressPosts() : null]);
   const wpPosts = (wp || []).filter((p) => !category || p.category === category);
@@ -52,8 +62,7 @@ export async function getPosts({ limit = 60, category } = {}) {
     const samples = SAMPLES.posts.filter((p) => !category || p.category === category);
     return { posts: samples.slice(0, limit), sample: true };
   }
-  const seen = new Set((own || []).map((p) => p.slug));
-  const posts = [...(own || []), ...wpPosts.filter((p) => !seen.has(p.slug))]
+  const posts = [...(own || []), ...wpPosts.filter(notCopied(own || []))]
     .sort((a, b) => (b.published_at || "").localeCompare(a.published_at || ""))
     .slice(0, limit);
   return { posts, sample: false };
@@ -79,22 +88,31 @@ export async function getProducts({ limit = 200, featured } = {}) {
   return { products: data, sample: false };
 }
 
-// Embeds in a post body: a line of just {{product:slug}}, and in a Quick
-// post (WordPress) also {{recipe:slug}} to attach a recipe card.
-export const PRODUCT_TOKEN = /^\s*\{\{\s*product:([a-z0-9-]+)\s*\}\}\s*$/gm;
-const RECIPE_TOKEN = /^\s*\{\{\s*recipe:([a-z0-9-]+)\s*\}\}\s*$/gm;
+// Cards in a post body: {{product:link-name}} and {{recipe:link-name}},
+// each on its own line, anywhere in the post (admin or WordPress).
+export const CARD_TOKEN = /^[ \t]*\{\{\s*(product|recipe):([a-z0-9-]+)\s*\}\}[ \t]*$/gm;
+const ANY_TOKEN = /\{\{\s*(product|recipe):([a-z0-9-]+)\s*\}\}/g;
 
-export function productSlugsIn(body = "") {
-  return [...body.matchAll(PRODUCT_TOKEN)].map((m) => m[1]);
+export const cardToken = (kind, slug) => `{{${kind}:${slug}}}`;
+
+function slugsIn(body = "", kind) {
+  return [...new Set([...body.matchAll(ANY_TOKEN)].filter((m) => m[1] === kind).map((m) => m[2]))];
+}
+export const productSlugsIn = (body) => slugsIn(body, "product");
+export const recipeSlugsIn = (body) => slugsIn(body, "recipe");
+
+// A code pasted in the middle of a line moves onto a line of its own.
+export function cardLines(markdown = "") {
+  return markdown.replace(/[ \t]*(\{\{\s*(?:product|recipe):[a-z0-9-]+\s*\}\})[ \t]*/g, "\n\n$1\n\n").replace(/\n{3,}/g, "\n\n");
 }
 
-// WordPress wraps a token line in <p>…</p>; put it on its own line instead.
+// WordPress wraps a code line in <p>…</p>; put it on its own line instead.
 function tokenLines(html) {
   return html.replace(/<p[^>]*>\s*(\{\{\s*(?:product|recipe):[a-z0-9-]+\s*\}\})\s*<\/p>/g, "\n$1\n");
 }
 
 async function productsFor(db, body) {
-  const slugs = [...new Set(productSlugsIn(body))];
+  const slugs = productSlugsIn(body);
   if (!db || !slugs.length) return [];
   const { data } = await db
     .from("products")
@@ -102,6 +120,14 @@ async function productsFor(db, body) {
     .eq("status", "published")
     .in("slug", slugs);
   return data || [];
+}
+
+// Recipes still in draft don't come back (RLS), so they aren't shown.
+async function recipesFor(db, body) {
+  const slugs = recipeSlugsIn(body);
+  if (!db || !slugs.length) return [];
+  const { data } = await db.from("recipes").select("*").eq("status", "published").in("slug", slugs);
+  return slugs.map((s) => (data || []).find((r) => r.slug === s)).filter(Boolean);
 }
 
 async function ownPost(db, slug) {
@@ -114,20 +140,16 @@ async function ownPost(db, slug) {
   if (error) console.error("getPost failed", error.message);
   if (!post) return null;
   // A recipe still in draft doesn't come back (RLS), so it isn't shown.
-  return { ...post, source: "admin", recipe: post.recipe || null, products: await productsFor(db, post.body) };
+  const [products, recipes] = await Promise.all([productsFor(db, post.body), recipesFor(db, post.body)]);
+  return { ...post, source: "admin", recipe: post.recipe || null, products, recipes };
 }
 
 async function wordpressPost(db, slug) {
   const post = await getWordpressPost(slug);
   if (!post) return null;
   const html = tokenLines(post.html);
-  const recipeSlug = [...html.matchAll(RECIPE_TOKEN)][0]?.[1];
-  let recipe = null;
-  if (db && recipeSlug) {
-    const { data } = await db.from("recipes").select("*").eq("slug", recipeSlug).eq("status", "published").maybeSingle();
-    recipe = data || null;
-  }
-  return { ...post, html: html.replace(RECIPE_TOKEN, ""), recipe, products: await productsFor(db, html) };
+  const [products, recipes] = await Promise.all([productsFor(db, html), recipesFor(db, html)]);
+  return { ...post, html, recipe: null, products, recipes };
 }
 
 export async function getPost(slug) {
@@ -138,9 +160,8 @@ export async function getPost(slug) {
 export async function getPostSlugs() {
   const db = publicClient();
   const [own, wp] = await Promise.all([
-    db ? db.from("posts").select("slug, updated_at").eq("status", "published").then(({ data }) => data || []) : [],
+    db ? db.from("posts").select("slug, updated_at, wordpress_id").eq("status", "published").then(({ data }) => data || []) : [],
     wordpressConfigured ? getWordpressPosts() : [],
   ]);
-  const seen = new Set(own.map((p) => p.slug));
-  return [...own, ...wp.filter((p) => !seen.has(p.slug)).map((p) => ({ slug: p.slug, updated_at: p.updated_at }))];
+  return [...own.map((p) => ({ slug: p.slug, updated_at: p.updated_at })), ...wp.filter(notCopied(own)).map((p) => ({ slug: p.slug, updated_at: p.updated_at }))];
 }

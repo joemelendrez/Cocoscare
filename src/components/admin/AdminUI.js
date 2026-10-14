@@ -271,3 +271,41 @@ export function moveItem(list, index, dir) {
   [next[index], next[to]] = [next[to], next[index]];
   return next;
 }
+
+// A card's code ({{product:…}} / {{recipe:…}}) with a Copy button, to paste
+// on its own line anywhere in a post. `compact` is the small list version.
+export function CopyCode({ code, compact = false, disabled = false }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked; the code is on screen to copy by hand */
+    }
+  };
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={copy}
+        disabled={disabled}
+        title={`Copy ${code} to paste into a post`}
+        className="shrink-0 rounded-full border-2 border-ink bg-paper px-3 py-1 text-sm font-semibold hover:bg-blush disabled:opacity-50"
+      >
+        {copied ? "Copied!" : "Copy card"}
+      </button>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <code className="max-w-full break-all rounded-xl border-2 border-ink bg-blush px-3 py-2 font-mono text-sm">{code}</code>
+      <Button variant="ghost" className="py-1.5 text-sm" onClick={copy} disabled={disabled}>
+        {copied ? "Copied!" : "Copy"}
+      </Button>
+    </div>
+  );
+}
