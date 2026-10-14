@@ -263,7 +263,7 @@ function PostForm({ initial, rec, startRecipeId }) {
                 s.type === "html" ? (
                   <div key={i} className="post-body" dangerouslySetInnerHTML={{ __html: s.html }} />
                 ) : s.type === "faq" ? (
-                  <FaqBlock key={i} title={s.title} items={s.items} />
+                  <FaqBlock key={i} title={s.title} intro={s.intro} items={s.items} />
                 ) : s.type === "recipe" ? (
                   <RecipeCard key={i} recipe={s.recipe} anchor={false} />
                 ) : (
