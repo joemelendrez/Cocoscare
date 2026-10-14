@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import RecipeCard from "@/components/RecipeCard";
 import { useRecord } from "@/components/admin/useRecord";
@@ -9,6 +9,7 @@ import { useAdmin } from "@/components/admin/AdminShell";
 import {
   Button,
   Card,
+  CopyCode,
   DeleteButton,
   Field,
   Notice,
@@ -17,9 +18,9 @@ import {
   Segmented,
   TextArea,
   TextInput,
-  friendlyError,
   moveItem,
 } from "@/components/admin/AdminUI";
+import { cardToken } from "@/lib/data";
 import { formatAmount, guessTimerSeconds, parseAmount, parseIngredientLine, parseStepsText, slugify } from "@/lib/recipe";
 
 const BLANK = {
@@ -101,7 +102,6 @@ function PasteBox({ label, placeholder, onAdd }) {
 }
 
 function RecipeForm({ initial, rec }) {
-  const router = useRouter();
   const { supabase } = useAdmin();
   const [form, setForm] = useState(() => ({
     ...BLANK,
@@ -114,7 +114,6 @@ function RecipeForm({ initial, rec }) {
     steps: toStepRows(initial.steps || []),
   }));
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
-  const [makingPost, setMakingPost] = useState(false);
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setRow = (list, i, patch) => set({ [list]: form[list].map((r, j) => (j === i ? { ...r, ...patch } : r)) });
 
@@ -130,29 +129,6 @@ function RecipeForm({ initial, rec }) {
     });
     if (saved) set({ status: saved.status });
     return saved;
-  };
-
-  const makePost = async () => {
-    setMakingPost(true);
-    const saved = await save();
-    if (!saved) return setMakingPost(false);
-    const { data, error } = await supabase
-      .from("posts")
-      .insert({
-        title: saved.title,
-        slug: saved.slug,
-        category: "recipes",
-        excerpt: saved.summary,
-        cover_url: saved.image_url,
-        recipe_id: saved.id,
-        body: "Write a few lines about why you love this recipe and who it's for.\n\n## Tips for making it\n\n",
-        status: "draft",
-      })
-      .select("id")
-      .single();
-    setMakingPost(false);
-    if (error) rec.setNotice({ type: "error", text: friendlyError(error) });
-    else router.push(`/admin/posts/${data.id}`);
   };
 
   return (
@@ -299,14 +275,18 @@ function RecipeForm({ initial, rec }) {
         </Field>
       </Card>
 
+      <Card title="Use it in a post">
+        <p className="mb-3 text-ink/75">Paste this on its own line anywhere in a post and the full recipe card shows there, with timers and the servings scaler:</p>
+        <CopyCode code={cardToken("recipe", rec.record.slug || form.slug || "link-name")} disabled={!rec.record.slug} />
+        {!rec.record.slug && <p className="mt-2 text-sm text-ink/60">Save it first, then copy the code.</p>}
+        <p className="mt-2 text-sm text-ink/60">Or use &ldquo;+ Recipe card&rdquo; in the post editor.</p>
+      </Card>
+
       <div className="sticky bottom-3 z-30 space-y-3 rounded-[1.75rem] border-[3px] border-ink bg-paper p-3 shadow-[4px_4px_0_var(--ink)]">
         <Notice notice={rec.notice} />
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => save()} disabled={!canSave || rec.saving}>
             {rec.saving ? "Saving…" : "Save"}
-          </Button>
-          <Button variant="dark" onClick={makePost} disabled={!canSave || rec.saving || makingPost}>
-            {makingPost ? "Making post…" : "Make it a blog post"}
           </Button>
           {!rec.isNew && <span className="ml-auto"><DeleteButton onDelete={() => rec.remove(["/blog"])} label="Delete recipe" /></span>}
         </div>

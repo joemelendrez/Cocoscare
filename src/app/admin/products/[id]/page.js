@@ -6,8 +6,9 @@ import { useState } from "react";
 import { PickCard, ProductEmbed } from "@/components/Cards";
 import { useRecord } from "@/components/admin/useRecord";
 import { useAdmin } from "@/components/admin/AdminShell";
-import { Button, Card, DeleteButton, Field, Notice, PhotoInput, Segmented, Select, TextArea, TextInput } from "@/components/admin/AdminUI";
+import { Button, Card, CopyCode, DeleteButton, Field, Notice, PhotoInput, Segmented, Select, TextArea, TextInput } from "@/components/admin/AdminUI";
 import { SHOP_SECTIONS } from "@/lib/content";
+import { cardToken } from "@/lib/data";
 import { slugify } from "@/lib/recipe";
 
 const BLANK = {
@@ -45,7 +46,6 @@ function ProductForm({ initial, rec }) {
   const { supabase } = useAdmin();
   const [form, setForm] = useState(() => ({ ...BLANK, ...initial, note: initial.note || "", url: initial.url || "", price_label: initial.price_label || "" }));
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
-  const [copied, setCopied] = useState(false);
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   const url = form.url.trim();
@@ -64,18 +64,6 @@ function ProductForm({ initial, rec }) {
     sort: Number(form.sort) || 0,
     status: form.status,
   };
-  const token = `{{product:${rec.record.slug || form.slug || "link-name"}}}`;
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(token);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* clipboard blocked; the code is on screen to copy by hand */
-    }
-  };
-
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -160,15 +148,10 @@ function ProductForm({ initial, rec }) {
       </Card>
 
       <Card title="Use it in a post">
-        <p className="text-ink/75">Put this on its own line in any post and it shows as a card with your link:</p>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <code className="rounded-xl border-2 border-ink bg-blush px-3 py-2 font-mono text-sm">{token}</code>
-          <Button variant="ghost" className="py-1.5 text-sm" onClick={copy} disabled={!rec.record.slug}>
-            {copied ? "Copied!" : "Copy"}
-          </Button>
-        </div>
+        <p className="mb-3 text-ink/75">Paste this on its own line anywhere in a post and it shows there as a card with your link:</p>
+        <CopyCode code={cardToken("product", rec.record.slug || form.slug || "link-name")} disabled={!rec.record.slug} />
         {!rec.record.slug && <p className="mt-2 text-sm text-ink/60">Save it first, then copy the code.</p>}
-        <p className="mt-2 text-sm text-ink/60">Or use &ldquo;Add a product&rdquo; in the post editor.</p>
+        <p className="mt-2 text-sm text-ink/60">Or use &ldquo;+ Product card&rdquo; in the post editor.</p>
       </Card>
 
       <div className="sticky bottom-3 z-30 space-y-3 rounded-[1.75rem] border-[3px] border-ink bg-paper p-3 shadow-[4px_4px_0_var(--ink)]">

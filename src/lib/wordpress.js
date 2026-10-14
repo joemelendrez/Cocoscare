@@ -1,7 +1,8 @@
-// Posts Coco writes with Handoff Hero's Quick post wizard land on the
-// WordPress subsite (as drafts; Joseph publishes them in wp-admin). The blog
-// reads the published ones over WPGraphQL and merges them with the posts
-// written in /admin (see data.js). Set WORDPRESS_GRAPHQL_URL=off to stop.
+// Posts Coco writes in Handoff Hero are sent to this WordPress subsite. Live
+// ones show on the blog straight from WPGraphQL, merged with the posts
+// edited in /admin (see data.js); /admin can also pull any of them in to
+// finish with photos and cards (wordpressInbox.js). WORDPRESS_GRAPHQL_URL=off
+// stops reading WordPress on the blog.
 
 const URL_SETTING = process.env.WORDPRESS_GRAPHQL_URL || "https://cms.habitnova.com/cocoscare/graphql";
 export const wordpressConfigured = URL_SETTING !== "off";
@@ -18,7 +19,7 @@ export function decodeEntities(text = "") {
 
 export const stripTags = (html = "") => decodeEntities(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
 
-// Quick post's types file posts under these WordPress categories.
+// WordPress category slugs and the blog categories they show under.
 const CATEGORY_MAP = {
   recipes: "recipes",
   recipe: "recipes",
@@ -29,7 +30,7 @@ const CATEGORY_MAP = {
   "nanny-tips": "nanny-tips",
 };
 
-function categoryKey(nodes = []) {
+export function categoryKey(nodes = []) {
   for (const n of nodes) if (CATEGORY_MAP[n.slug]) return CATEGORY_MAP[n.slug];
   return "nanny-tips";
 }
@@ -55,6 +56,7 @@ async function query(gql, variables = {}) {
 }
 
 const FIELDS = `
+  databaseId
   slug
   title
   excerpt
@@ -72,6 +74,7 @@ function toPost(node, withContent = false) {
   const words = stripTags(html).split(" ").filter(Boolean).length;
   return {
     source: "wordpress",
+    wordpress_id: node.databaseId,
     slug: node.slug,
     title: decodeEntities(node.title || ""),
     category: categoryKey(node.categories?.nodes),

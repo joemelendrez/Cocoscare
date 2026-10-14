@@ -1,6 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { createClient } from "@supabase/supabase-js";
-import { supabaseConfigured } from "@/lib/supabase";
+import { adminOnly } from "@/lib/adminAuth";
 
 // Called by /admin after a save so the live pages update now instead of
 // within the minute their cache allows. Only admins may call it, and only
@@ -8,16 +7,8 @@ import { supabaseConfigured } from "@/lib/supabase";
 const ALLOWED = /^\/(blog(\/[a-z0-9-]+)?|shop)?$/;
 
 export async function POST(request) {
-  if (!supabaseConfigured) return Response.json({ error: "Not configured" }, { status: 503 });
-  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!token) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-  const { data: isAdmin, error } = await db.rpc("is_admin");
-  if (error || isAdmin !== true) return Response.json({ error: "Forbidden" }, { status: 403 });
+  const denied = await adminOnly(request);
+  if (denied) return denied;
 
   let body;
   try {

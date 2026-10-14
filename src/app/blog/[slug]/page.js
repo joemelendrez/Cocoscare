@@ -55,11 +55,16 @@ export default async function PostPage({ params }) {
   const url = `${SITE.url}/blog/${post.slug}`;
   const isHtml = post.source === "wordpress";
   const body = isHtml ? post.html : post.body;
-  const segments = bodySegments(body, post.products, { html: isHtml });
+  const segments = bodySegments(body, { products: post.products, recipes: post.recipes, html: isHtml });
+  // The recipe for Google, Pinterest and "Jump to recipe": the one attached
+  // at the end, or else the first recipe card in the post.
+  const recipe = post.recipe || post.recipes[0] || null;
+  // "Jump to recipe" goes to its first card in the post, else the end one.
+  const anchorAt = segments.findIndex((s) => s.type === "recipe" && s.recipe.id === recipe?.id);
   const date = post.published_at
     ? new Date(post.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null;
-  const pinImage = post.recipe?.image_url || post.cover_url;
+  const pinImage = recipe?.image_url || post.cover_url;
   const pinUrl = pinImage
     ? `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({ url, media: pinImage, description: post.title })}`
     : null;
@@ -79,7 +84,7 @@ export default async function PostPage({ params }) {
           mainEntityOfPage: url,
         }}
       />
-      {post.recipe && <JsonLd item={recipeSchema(post.recipe, { url, author: "Coco", published: post.published_at })} />}
+      {recipe && <JsonLd item={recipeSchema(recipe, { url, author: "Coco", published: post.published_at })} />}
 
       <header className={`dots-ink relative overflow-hidden border-b-[3px] border-ink pb-14 pt-32 sm:pt-36 ${COLOR[cat.color].bg}`}>
         <div className="relative mx-auto max-w-3xl px-5 text-center">
@@ -94,7 +99,7 @@ export default async function PostPage({ params }) {
           <p className="mt-4 text-sm font-semibold text-ink/70">
             By Coco{date ? ` · ${date}` : ""} · {readingMinutes(body, { html: isHtml })} min read
           </p>
-          {post.recipe && (
+          {recipe && (
             <a
               href="#recipe"
               className="lift mt-6 inline-block rounded-full border-[3px] border-ink bg-ink px-6 py-3 font-display text-lg tracking-wide text-paper shadow-[5px_5px_0_var(--pink)]"
@@ -118,12 +123,19 @@ export default async function PostPage({ params }) {
           </p>
         )}
 
-        <div className="post-body">
+        {/* Text chunks get the post typography; cards sit between them unstyled. */}
+        <div className="space-y-[1.1em]">
           {segments.map((s, i) =>
             s.type === "html" ? (
-              <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} className="space-y-[1.1em]" />
+              <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} className="post-body" />
+            ) : s.type === "recipe" ? (
+              <div key={i} className="py-6 lg:-mx-24">
+                <RecipeCard recipe={s.recipe} pinUrl={pinUrl} anchor={i === anchorAt} />
+              </div>
             ) : (
-              <ProductEmbed key={i} product={s.product} />
+              <div key={i} className="post-body">
+                <ProductEmbed product={s.product} />
+              </div>
             ),
           )}
         </div>
@@ -131,7 +143,7 @@ export default async function PostPage({ params }) {
 
       {post.recipe && (
         <div className="mx-auto max-w-5xl px-5 pb-16">
-          <RecipeCard recipe={post.recipe} pinUrl={pinUrl} />
+          <RecipeCard recipe={post.recipe} pinUrl={pinUrl} anchor={anchorAt === -1} />
         </div>
       )}
 

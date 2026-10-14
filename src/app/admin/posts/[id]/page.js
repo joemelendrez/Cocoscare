@@ -9,7 +9,7 @@ import { useRecord } from "@/components/admin/useRecord";
 import { useAdmin } from "@/components/admin/AdminShell";
 import { Button, Card, DeleteButton, Field, Notice, PhotoInput, Segmented, Select, StatusPill, TextArea, TextInput, friendlyError, uploadPhoto } from "@/components/admin/AdminUI";
 import { CATEGORIES } from "@/lib/content";
-import { productSlugsIn } from "@/lib/data";
+import { cardToken, productSlugsIn, recipeSlugsIn } from "@/lib/data";
 import { bodySegments } from "@/lib/postBody";
 import { slugify } from "@/lib/recipe";
 
@@ -54,7 +54,7 @@ function PostForm({ initial, rec }) {
   const lib = useLibrary(supabase);
   const [form, setForm] = useState(() => ({ ...BLANK, ...initial, excerpt: initial.excerpt || "", body: initial.body || "" }));
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
-  const [picking, setPicking] = useState(false);
+  const [picking, setPicking] = useState(null); // "product" | "recipe" | null
   const [photoBusy, setPhotoBusy] = useState(false);
   const [tab, setTab] = useState("write");
   const bodyRef = useRef(null);
@@ -62,9 +62,13 @@ function PostForm({ initial, rec }) {
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   const recipe = lib.recipes.find((r) => r.id === form.recipe_id) || null;
-  const usedSlugs = [...new Set(productSlugsIn(form.body))];
+  const usedSlugs = productSlugsIn(form.body);
   const usedProducts = lib.products.filter((p) => usedSlugs.includes(p.slug));
-  const missingSlugs = lib.loaded ? usedSlugs.filter((s) => !lib.products.some((p) => p.slug === s)) : [];
+  const usedRecipeSlugs = recipeSlugsIn(form.body);
+  const usedRecipes = usedRecipeSlugs.map((s) => lib.recipes.find((r) => r.slug === s)).filter(Boolean);
+  const missingSlugs = lib.loaded
+    ? [...usedSlugs.filter((s) => !lib.products.some((p) => p.slug === s)), ...usedRecipeSlugs.filter((s) => !lib.recipes.some((r) => r.slug === s))]
+    : [];
   const canSave = form.title.trim() && form.slug;
 
   // Inserts text on its own lines at the cursor (or at the end).
@@ -111,7 +115,7 @@ function PostForm({ initial, rec }) {
     let alsoLive = [];
     if (goingLive) {
       const drafts = [
-        ...(recipe && recipe.status !== "published" ? [{ table: "recipes", id: recipe.id, name: recipe.title }] : []),
+        ...[...new Set([recipe, ...usedRecipes].filter(Boolean))].filter((r) => r.status !== "published").map((r) => ({ table: "recipes", id: r.id, name: r.title })),
         ...usedProducts.filter((p) => p.status !== "published").map((p) => ({ table: "products", id: p.id, name: p.name })),
       ];
       for (const d of drafts) {
@@ -130,7 +134,7 @@ function PostForm({ initial, rec }) {
     if (saved) set({ published_at: saved.published_at });
   };
 
-  const segments = bodySegments(form.body, usedProducts);
+  const segments = bodySegments(form.body, { products: usedProducts, recipes: usedRecipes });
 
   return (
     <div className="space-y-5">
@@ -139,7 +143,7 @@ function PostForm({ initial, rec }) {
           <Link href="/admin" className="text-sm font-semibold text-ink/60 hover:underline">
             ← Posts
           </Link>
-          <h1 className="font-display text-4xl tracking-wide">{rec.isNew ? "New post" : form.title || "Post"}</h1>
+          <h1 className="font-display text-4xl tracking-wide">{form.title || "Post"}</h1>
           {!rec.isNew && (
             <p className="mt-1 flex items-center gap-2 text-sm text-ink/60">
               Saved as <StatusPill status={rec.record.status} />
@@ -185,14 +189,14 @@ function PostForm({ initial, rec }) {
         </div>
       </Card>
 
-      <Card title="Recipe card" aside={<Link href="/admin/recipes/new" className="text-sm font-semibold text-pink-deep hover:underline">New recipe</Link>}>
+      <Card title="Recipe card at the end" aside={<Link href="/admin/recipes/new" className="text-sm font-semibold text-pink-deep hover:underline">New recipe</Link>}>
         <Select
           aria-label="Recipe"
           value={form.recipe_id || ""}
           onChange={(e) => set({ recipe_id: e.target.value || null })}
           options={[{ value: "", label: lib.loaded ? "No recipe card" : "Loading…" }, ...lib.recipes.map((r) => ({ value: r.id, label: `${r.title}${r.status === "published" ? "" : " (draft)"}` }))]}
         />
-        <p className="mt-2 text-sm text-ink/60">It shows after the post with timers, a servings scaler and a print button.</p>
+        <p className="mt-2 text-sm text-ink/60">It shows after the post with timers, a servings scaler and a print button. To put a recipe card somewhere in the middle, use &ldquo;+ Recipe card&rdquo; below.</p>
       </Card>
 
       <Card
@@ -208,8 +212,11 @@ function PostForm({ initial, rec }) {
               <Button variant="ghost" className="py-1.5 text-sm" disabled={photoBusy} onClick={() => photoRef.current?.click()}>
                 {photoBusy ? "Uploading…" : "+ Photo"}
               </Button>
-              <Button variant="ghost" className="py-1.5 text-sm" onClick={() => setPicking((v) => !v)} aria-expanded={picking}>
+              <Button variant="ghost" className="py-1.5 text-sm" onClick={() => setPicking((v) => (v === "product" ? null : "product"))} aria-expanded={picking === "product"}>
                 + Product card
+              </Button>
+              <Button variant="ghost" className="py-1.5 text-sm" onClick={() => setPicking((v) => (v === "recipe" ? null : "recipe"))} aria-expanded={picking === "recipe"}>
+                + Recipe card
               </Button>
               <input
                 ref={photoRef}
@@ -225,24 +232,28 @@ function PostForm({ initial, rec }) {
             </div>
             {picking && (
               <div className="mb-3 max-h-72 overflow-y-auto rounded-2xl border-2 border-dashed border-ink/50 p-2">
-                {lib.products.length === 0 ? (
+                {(picking === "product" ? lib.products : lib.recipes).length === 0 ? (
                   <p className="p-2 text-sm text-ink/70">
-                    No picks yet. <Link href="/admin/products/new" className="font-semibold text-pink-deep hover:underline">Add one in Shop</Link> first.
+                    {picking === "product" ? "No picks yet. " : "No recipes yet. "}
+                    <Link href={picking === "product" ? "/admin/products/new" : "/admin/recipes/new"} className="font-semibold text-pink-deep hover:underline">
+                      {picking === "product" ? "Add one in Shop" : "Build one in Recipes"}
+                    </Link>{" "}
+                    first.
                   </p>
                 ) : (
                   <ul>
-                    {lib.products.map((p) => (
-                      <li key={p.id}>
+                    {(picking === "product" ? lib.products : lib.recipes).map((item) => (
+                      <li key={item.id}>
                         <button
                           type="button"
                           className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left hover:bg-blush"
                           onClick={() => {
-                            insert(`{{product:${p.slug}}}`);
-                            setPicking(false);
+                            insert(cardToken(picking, item.slug));
+                            setPicking(null);
                           }}
                         >
-                          <span className="font-semibold">{p.name}</span>
-                          <span className="text-xs text-ink/60">{p.status === "published" ? "" : "draft"}</span>
+                          <span className="font-semibold">{item.name || item.title}</span>
+                          <span className="text-xs text-ink/60">{item.status === "published" ? "" : "draft"}</span>
                         </button>
                       </li>
                     ))}
@@ -260,10 +271,10 @@ function PostForm({ initial, rec }) {
               className="font-[inherit]"
             />
             <p className="mt-2 text-sm text-ink/60">
-              ## makes a heading, **bold**, *italic*, and a line starting with - makes a list. Product cards sit on their own line.
+              ## makes a heading, **bold**, *italic*, and a line starting with - makes a list. Paste a copied product or recipe card code anywhere and it shows there.
             </p>
             {missingSlugs.length > 0 && (
-              <p className="mt-2 text-sm font-semibold text-pink-deep">No pick has the link name {missingSlugs.join(", ")}, so that card won&rsquo;t show.</p>
+              <p className="mt-2 text-sm font-semibold text-pink-deep">Nothing has the link name {missingSlugs.join(", ")}, so that card won&rsquo;t show.</p>
             )}
           </>
         ) : (
@@ -272,11 +283,21 @@ function PostForm({ initial, rec }) {
               // eslint-disable-next-line @next/next/no-img-element -- storage URL preview
               <img src={form.cover_url} alt="" className="max-h-96 w-full rounded-[1.25rem] border-[3px] border-ink object-cover" />
             )}
-            <div className="post-body">
+            <div className="space-y-[1.1em]">
               {segments.length === 0 && <p className="text-ink/60">Nothing written yet.</p>}
-              {segments.map((s, i) => (s.type === "html" ? <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} /> : <ProductEmbed key={i} product={s.product} />))}
+              {segments.map((s, i) =>
+                s.type === "html" ? (
+                  <div key={i} className="post-body" dangerouslySetInnerHTML={{ __html: s.html }} />
+                ) : s.type === "recipe" ? (
+                  <RecipeCard key={i} recipe={s.recipe} anchor={false} />
+                ) : (
+                  <div key={i} className="post-body">
+                    <ProductEmbed product={s.product} />
+                  </div>
+                ),
+              )}
             </div>
-            {recipe && <RecipeCard recipe={recipe} />}
+            {recipe && <RecipeCard recipe={recipe} anchor={false} />}
           </div>
         )}
       </Card>
@@ -301,6 +322,16 @@ function PostForm({ initial, rec }) {
 export default function PostEditor() {
   const { id } = useParams();
   const rec = useRecord("posts", id, BLANK, "/admin/posts");
+  // Posts start in Handoff Hero; this page finishes them.
+  if (rec.isNew)
+    return (
+      <Card title="Posts start in Handoff Hero">
+        <p className="text-ink/75">Write it there and send it to your blog as a draft. It then shows on the Posts page under &ldquo;From Handoff Hero&rdquo;, ready to finish here.</p>
+        <Link href="/admin" className="mt-3 inline-block font-semibold text-pink-deep underline">
+          ← Posts
+        </Link>
+      </Card>
+    );
   if (rec.missing) return <Notice notice={{ type: "error", text: "That post doesn't exist (it may have been deleted)." }} />;
   if (!rec.record) return <p className="animate-pulse font-semibold text-ink/60">Loading…</p>;
   return <PostForm key={rec.record.id || "new"} initial={rec.record} rec={rec} />;
