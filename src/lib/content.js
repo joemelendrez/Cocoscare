@@ -7,6 +7,8 @@ export const SITE = {
   tagline: "Real-life mom finds, easy recipes & kid-tested outings",
   description:
     "A career nanny turned stay-at-home mom sharing the recipes, baby and toddler products, and family outings that actually work.",
+  // Where Quick posts from Handoff Hero wait as drafts for review.
+  wordpressDrafts: "https://cms.habitnova.com/cocoscare/wp-admin/edit.php?post_status=draft&post_type=post",
   // Fill these in once the accounts exist; links without a URL are hidden.
   social: {
     pinterest: null,

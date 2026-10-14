@@ -1,14 +1,22 @@
 "use client";
 
 import AdminList, { RowText, RowThumb, ago } from "@/components/admin/AdminList";
-import { categoryFor } from "@/lib/content";
+import { SITE, categoryFor } from "@/lib/content";
 
 export default function AdminPosts() {
   return (
     <AdminList
       table="posts"
       title="Posts"
-      intro="Write a post, mark it ready for review, and Joseph puts it live."
+      intro={
+        <>
+          Write a post, mark it ready for review, and Joseph puts it live. Quick posts from Handoff Hero wait in{" "}
+          <a href={SITE.wordpressDrafts} target="_blank" rel="noreferrer" className="font-semibold text-pink-deep underline">
+            WordPress drafts
+          </a>{" "}
+          and show on the blog once published there.
+        </>
+      }
       newHref="/admin/posts/new"
       newLabel="New post"
       select="id, title, category, status, cover_url, updated_at"

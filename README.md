@@ -15,7 +15,12 @@ npm run dev
 
 ## Content and the admin
 
-Posts, recipes and shop picks live in Coco's own Supabase project. `/admin` is where they're written:
+The blog merges two sources:
+
+- **Quick posts** from Handoff Hero, saved as drafts on the WordPress subsite (`cms.habitnova.com/cocoscare`). Published ones show on the blog within a minute, read over WPGraphQL (`src/lib/wordpress.js`; `WORDPRESS_GRAPHQL_URL` overrides the address, `off` turns it off). A line of `{{product:link-name}}` or `{{recipe:link-name}}` in a Quick post shows that shop card or recipe card.
+- **Posts written in `/admin`**, plus all recipes and shop picks, in Coco's own Supabase project. If both sources use the same link name, the `/admin` post wins.
+
+`/admin` has:
 
 - **Recipes**: ingredients (paste a list or add rows), steps with optional timers (guessed from "bake 20 minutes"), servings, tips and a live preview. "Make it a blog post" starts a draft post with the recipe card attached.
 - **Shop**: picks with an https affiliate link, price, section, card color and a home-page switch. Any post can show one as a card with a line of `{{product:link-name}}`.

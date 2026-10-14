@@ -53,7 +53,9 @@ export default async function PostPage({ params }) {
 
   const cat = categoryFor(post.category);
   const url = `${SITE.url}/blog/${post.slug}`;
-  const segments = bodySegments(post.body, post.products);
+  const isHtml = post.source === "wordpress";
+  const body = isHtml ? post.html : post.body;
+  const segments = bodySegments(body, post.products, { html: isHtml });
   const date = post.published_at
     ? new Date(post.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null;
@@ -90,7 +92,7 @@ export default async function PostPage({ params }) {
           <h1 className="mt-5 font-display text-4xl leading-[1.05] tracking-wide sm:text-6xl">{post.title}</h1>
           {post.excerpt && <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-ink/80">{post.excerpt}</p>}
           <p className="mt-4 text-sm font-semibold text-ink/70">
-            By Coco{date ? ` · ${date}` : ""} · {readingMinutes(post.body)} min read
+            By Coco{date ? ` · ${date}` : ""} · {readingMinutes(body, { html: isHtml })} min read
           </p>
           {post.recipe && (
             <a
@@ -105,7 +107,7 @@ export default async function PostPage({ params }) {
 
       <div className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
         {post.cover_url && (
-          // eslint-disable-next-line @next/next/no-img-element -- Supabase storage URLs
+          // eslint-disable-next-line @next/next/no-img-element -- Supabase storage or WordPress URLs
           <img src={post.cover_url} alt="" className="sticker mb-10 aspect-[4/3] w-full rotate-[-1deg] rounded-[2rem] object-cover" />
         )}
 
