@@ -9,9 +9,10 @@ import { useRecord } from "@/components/admin/useRecord";
 import { useAdmin } from "@/components/admin/AdminShell";
 import { Button, Card, DeleteButton, Field, Notice, PhotoInput, Segmented, Select, StatusPill, TextArea, TextInput, friendlyError, uploadPhoto } from "@/components/admin/AdminUI";
 import { CATEGORIES } from "@/lib/content";
-import { cardToken, productSlugsIn, recipeSlugsIn } from "@/lib/data";
+import { productSlugsIn, recipeSlugsIn } from "@/lib/data";
 import { bodySegments } from "@/lib/postBody";
 import FaqBlock from "@/components/FaqBlock";
+import RichEditor from "@/components/admin/RichEditor";
 import { slugify } from "@/lib/recipe";
 
 const BLANK = {
@@ -56,10 +57,8 @@ function PostForm({ initial, rec }) {
   const [form, setForm] = useState(() => ({ ...BLANK, ...initial, excerpt: initial.excerpt || "", body: initial.body || "" }));
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
   const [picking, setPicking] = useState(null); // "product" | "recipe" | null
-  const [photoBusy, setPhotoBusy] = useState(false);
   const [tab, setTab] = useState("write");
-  const bodyRef = useRef(null);
-  const photoRef = useRef(null);
+  const cardInserterRef = useRef(null);
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   const recipe = lib.recipes.find((r) => r.id === form.recipe_id) || null;
@@ -72,30 +71,11 @@ function PostForm({ initial, rec }) {
     : [];
   const canSave = form.title.trim() && form.slug;
 
-  // Inserts text on its own lines at the cursor (or at the end).
-  const insert = (text) => {
-    const el = bodyRef.current;
-    const body = form.body;
-    const at = el && document.activeElement === el ? el.selectionStart : body.length;
-    const before = body.slice(0, at).replace(/\s*$/, "");
-    const after = body.slice(at).replace(/^\s*/, "");
-    const chunk = `${before ? "\n\n" : ""}${text}\n\n`;
-    set({ body: `${before}${chunk}${after}` });
-    requestAnimationFrame(() => {
-      if (!el) return;
-      el.focus();
-      const pos = before.length + chunk.length;
-      el.setSelectionRange(pos, pos);
-    });
-  };
-
-  const addPhoto = async (file) => {
-    if (!file) return;
-    setPhotoBusy(true);
+  // Photos added in the editor go to storage first; null if that failed.
+  const uploadBodyPhoto = async (file) => {
     const { url, error } = await uploadPhoto(supabase, "posts", file);
-    setPhotoBusy(false);
     if (error) rec.setNotice({ type: "error", text: error });
-    else insert(`![Describe the photo](${url})`);
+    return error ? null : url;
   };
 
   const save = async () => {
@@ -206,44 +186,6 @@ function PostForm({ initial, rec }) {
       >
         {tab === "write" ? (
           <>
-            <div className="mb-3 flex flex-wrap gap-2">
-              <Button variant="ghost" className="py-1.5 text-sm" onClick={() => insert("## New section")}>
-                + Heading
-              </Button>
-              <Button variant="ghost" className="py-1.5 text-sm" disabled={photoBusy} onClick={() => photoRef.current?.click()}>
-                {photoBusy ? "Uploading…" : "+ Photo"}
-              </Button>
-              <Button variant="ghost" className="py-1.5 text-sm" onClick={() => setPicking((v) => (v === "product" ? null : "product"))} aria-expanded={picking === "product"}>
-                + Product card
-              </Button>
-              <Button variant="ghost" className="py-1.5 text-sm" onClick={() => setPicking((v) => (v === "recipe" ? null : "recipe"))} aria-expanded={picking === "recipe"}>
-                + Recipe card
-              </Button>
-              <Button
-                variant="ghost"
-                className="py-1.5 text-sm"
-                onClick={() =>
-                  insert(
-                    /^##\s+(frequently asked questions|faqs?)\b/im.test(form.body)
-                      ? "### Your question?\n\nThe answer in a sentence or two."
-                      : "## Frequently Asked Questions\n\n### Your question?\n\nThe answer in a sentence or two.",
-                  )
-                }
-              >
-                + FAQ
-              </Button>
-              <input
-                ref={photoRef}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                tabIndex={-1}
-                onChange={(e) => {
-                  addPhoto(e.target.files?.[0]);
-                  e.target.value = "";
-                }}
-              />
-            </div>
             {picking && (
               <div className="mb-3 max-h-72 overflow-y-auto rounded-2xl border-2 border-dashed border-ink/50 p-2">
                 {(picking === "product" ? lib.products : lib.recipes).length === 0 ? (
@@ -262,7 +204,7 @@ function PostForm({ initial, rec }) {
                           type="button"
                           className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left hover:bg-blush"
                           onClick={() => {
-                            insert(cardToken(picking, item.slug));
+                            cardInserterRef.current?.(picking, item.slug);
                             setPicking(null);
                           }}
                         >
@@ -275,17 +217,17 @@ function PostForm({ initial, rec }) {
                 )}
               </div>
             )}
-            <TextArea
-              ref={bodyRef}
-              aria-label="Post text"
-              rows={18}
+            <RichEditor
               value={form.body}
-              onChange={(e) => set({ body: e.target.value })}
-              placeholder={"Start with a line or two about why this matters to you.\n\n## A heading\n\nShort paragraphs read best on phones."}
-              className="font-[inherit]"
+              onChange={(body) => set({ body })}
+              library={{ ...lib }}
+              onUploadPhoto={uploadBodyPhoto}
+              onOpenPicker={(kind) => setPicking((v) => (v === kind ? null : kind))}
+              cardInserterRef={cardInserterRef}
+              placeholder="Start with a line or two about why this matters to you."
             />
             <p className="mt-2 text-sm text-ink/60">
-              ## makes a heading, **bold**, *italic*, and a line starting with - makes a list. Paste a copied product or recipe card code anywhere and it shows there.
+              Select words to make them bold, italic or a link. Drag a card to move it. Preview shows the post exactly as readers see it.
             </p>
             {missingSlugs.length > 0 && (
               <p className="mt-2 text-sm font-semibold text-pink-deep">Nothing has the link name {missingSlugs.join(", ")}, so that card won&rsquo;t show.</p>

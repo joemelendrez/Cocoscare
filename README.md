@@ -26,7 +26,7 @@ How a post is made: Coco writes it in her Handoff Hero account (topics, SEO tool
 
 - **Recipes**: ingredients (paste a list or add rows), steps with optional timers (guessed from "bake 20 minutes"), servings, tips and a live preview. Attach one to a post with the recipe picker in the post editor.
 - **Shop**: picks with an https affiliate link, price, section, card color and a home-page switch. Any post can show one as a card with a line of `{{product:link-name}}`.
-- **Posts**: Markdown with toolbar buttons for headings, photos, product cards and an FAQ, a recipe picker, and Draft → Ready for review → Live. Putting a post live also puts its recipe and picks live. A `## Frequently Asked Questions` heading with `### question` / answer pairs under it (what Handoff Hero's FAQ tool writes, in Markdown or WordPress posts) shows as the FAQ card (`FaqBlock.js`, tap to open) with FAQPage data for Google (`splitFaq()` in `src/lib/postBody.js`).
+- **Posts**: a what-you-see editor (Tiptap, `src/components/admin/RichEditor.js`) with headings, bold, italic, links, lists, quotes, photos (with a description), product and recipe cards you can drag, and an FAQ button. It still saves Markdown (`src/lib/editorMarkdown.js`), so the blog renders posts the same way. Also a recipe picker, and Draft → Ready for review → Live. Putting a post live also puts its recipe and picks live. A `## Frequently Asked Questions` heading with `### question` / answer pairs under it (what Handoff Hero's FAQ tool writes, in Markdown or WordPress posts) shows as the FAQ card (`FaqBlock.js`, tap to open) with FAQPage data for Google (`splitFaq()` in `src/lib/postBody.js`).
 
 On a post page the recipe card has step timers (with a chime), a servings scaler, an ingredient checklist, Cook mode (keeps the screen on), Print and Pin it, plus Recipe schema for Google.
 
@@ -34,7 +34,7 @@ Pages refresh within a minute of a change, and right away after a save in `/admi
 
 ### Setting up the database (once)
 
-1. In Coco's Supabase project, open **SQL Editor**, paste all of `supabase/migrations/0001_init.sql` and run it. It creates the tables, the security rules and the `media` photo bucket.
+1. In Coco's Supabase project, open **SQL Editor**, paste all of `supabase/migrations/0001_init.sql` and run it. It creates the tables, the security rules and the `media` photo bucket. For demo recipes and shop picks while the site is empty, also run `supabase/demo_content.sql` (its top comment has the two lines that remove them).
 2. **Authentication → Users → Add user** for each person who edits (Coco, Joseph). Then turn off **Authentication → Sign In / Providers → Email → Allow new users to sign up**, so nobody else can make an account.
 3. Make them admins in the SQL Editor:
    ```sql
