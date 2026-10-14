@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PickCard, PostCard } from "@/components/Cards";
-import { CATEGORIES, SAMPLE_PICKS, SAMPLE_POSTS, SHOP_SECTIONS } from "@/lib/content";
+import { CATEGORIES, SHOP_SECTIONS } from "@/lib/content";
 
 function Chips({ options, value, onChange, label }) {
   return (
@@ -55,13 +55,14 @@ function Grid({ items, render, className }) {
   );
 }
 
-export function BlogGrid() {
+export function BlogGrid({ posts }) {
   const [cat, setCat] = useState("all");
   const options = [{ key: "all", label: "All" }, ...CATEGORIES.map((c) => ({ key: c.key, label: c.label }))];
-  const items = cat === "all" ? SAMPLE_POSTS : SAMPLE_POSTS.filter((p) => p.category === cat);
+  const items = cat === "all" ? posts : posts.filter((p) => p.category === cat);
   return (
     <>
       <Chips options={options} value={cat} onChange={setCat} label="Blog categories" />
+      {!items.length && <p className="mt-12 text-center text-lg text-ink/60">Nothing here yet. Check back soon!</p>}
       <Grid
         items={items}
         render={(post) => <PostCard post={post} />}
@@ -71,12 +72,13 @@ export function BlogGrid() {
   );
 }
 
-export function ShopGrid() {
+export function ShopGrid({ products }) {
   const [section, setSection] = useState("all");
-  const items = section === "all" ? SAMPLE_PICKS : SAMPLE_PICKS.filter((p) => p.section === section);
+  const items = section === "all" ? products : products.filter((p) => p.section === section);
   return (
     <>
       <Chips options={SHOP_SECTIONS} value={section} onChange={setSection} label="Shop sections" />
+      {!items.length && <p className="mt-12 text-center text-lg text-ink/60">Nothing here yet. Check back soon!</p>}
       <Grid
         items={items}
         render={(pick) => <PickCard pick={pick} />}

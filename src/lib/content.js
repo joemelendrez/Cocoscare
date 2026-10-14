@@ -1,7 +1,5 @@
-// Placeholder content until the blog is wired to WordPress (posts written
-// in Handoff Hero's Quick post wizard) and Coco fills in her real shop
-// picks. Everything here is marked sample on the page, so swap it out
-// rather than adding to it.
+// Sample posts and picks, shown (marked "Sample") only while the site has
+// no database connected. Real content is written in /admin.
 
 export const SITE = {
   name: "Coco's Care",
