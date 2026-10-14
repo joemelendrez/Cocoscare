@@ -15,13 +15,33 @@ export const inboxConfigured = Boolean(USER && PASSWORD);
 
 const STATUS = { draft: "draft", pending: "draft", future: "scheduled", publish: "live", private: "draft" };
 
-function request(path) {
+// fetch drops the Authorization header when it follows a redirect to another
+// origin, and http → https counts as one, so WordPress would see a signed-out
+// request. Redirects within the same host are followed here with the login
+// kept; anything else is refused.
+async function request(path) {
   const auth = Buffer.from(`${USER}:${PASSWORD}`).toString("base64");
-  return fetch(`${SITE}/wp-json/wp/v2/${path}`, {
-    headers: { Authorization: `Basic ${auth}` },
-    cache: "no-store",
-    signal: AbortSignal.timeout(10000),
-  });
+  let url = new URL(`${SITE}/wp-json/wp/v2/${path}`);
+  for (let hops = 0; hops < 4; hops++) {
+    const res = await fetch(url, {
+      headers: { Authorization: `Basic ${auth}` },
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(10000),
+    });
+    const location = res.status >= 300 && res.status < 400 && res.headers.get("location");
+    if (!location) return res;
+    const next = new URL(location, url);
+    if (next.hostname !== url.hostname || next.protocol !== "https:") {
+      const error = new Error(`WordPress redirected to ${next.origin}${next.pathname}. Set WORDPRESS_SITE_URL on Netlify to the site's real https address, then redeploy.`);
+      error.status = 502;
+      throw error;
+    }
+    url = next;
+  }
+  const error = new Error("WordPress kept redirecting. Check WORDPRESS_SITE_URL on Netlify.");
+  error.status = 502;
+  throw error;
 }
 
 // WordPress answers "Invalid parameter(s): status" when whoever it thinks is
@@ -29,10 +49,10 @@ function request(path) {
 // this subsite, or a request it treated as signed out (the login header never
 // reached it). Asking who we are tells the two apart.
 async function cantSeeDraftsMessage() {
-  const me = await request("users/me?context=edit").catch(() => null);
+  const me = await request("users/me?context=edit");
   const who = me?.ok ? await me.json().catch(() => null) : null;
   if (!who) {
-    return "WordPress treated the request as signed out, so it can't show drafts. The login never reached it: check WORDPRESS_USERNAME (the WordPress username, not the Application Password's name) and WORDPRESS_APP_PASSWORD on Netlify, then redeploy.";
+    return "WordPress treated the request as signed out, so it can't show drafts. The login never reached it. Most often the web server in front of WordPress drops the Authorization header (on Apache, add CGIPassAuth On to the WordPress .htaccess), or Application Passwords are turned off for this site.";
   }
   const roles = Array.isArray(who.roles) && who.roles.length ? who.roles.join(", ") : "no role";
   return `WordPress signed in as ${who.slug || who.name || USER} (${roles} on this site), but that user can't see drafts here. Make them an Editor or Administrator on the Coco's Care site.`;
