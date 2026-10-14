@@ -7,6 +7,10 @@ import { useAdmin } from "@/components/admin/AdminShell";
 import { Button, Card, Notice, friendlyError } from "@/components/admin/AdminUI";
 import { categoryFor } from "@/lib/content";
 
+// A fixed id so WordPress lists one "Coco's Care admin" entry under the
+// user's Application Passwords, however often it's reconnected.
+const WORDPRESS_APP_ID = "85c106d7-9080-4f82-84c0-496d0b853a7f";
+
 const STATE_LABEL = { draft: "Draft in Handoff Hero", scheduled: "Scheduled", live: "Already on the blog" };
 
 // Posts sent from Handoff Hero to the WordPress subsite that haven't been
@@ -14,7 +18,7 @@ const STATE_LABEL = { draft: "Draft in Handoff Hero", scheduled: "Scheduled", li
 function FromHandoffHero() {
   const { supabase } = useAdmin();
   const router = useRouter();
-  const [state, setState] = useState({ loading: true, configured: true, posts: [], error: "" });
+  const [state, setState] = useState({ loading: true, configured: true, site: "", user: "", posts: [], error: "" });
   const [busy, setBusy] = useState(null);
   const [notice, setNotice] = useState(null);
 
@@ -32,19 +36,50 @@ function FromHandoffHero() {
     [supabase],
   );
 
+  const [reload, setReload] = useState(0);
+
+  // Coming back from WordPress's "Connect WordPress" screen: save the
+  // Application Password it added to the link, then drop it from the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userLogin = params.get("user_login");
+    const password = params.get("password");
+    const rejected = params.get("wp") === "rejected";
+    if (!rejected && !(userLogin && password)) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    const connecting = rejected
+      ? Promise.reject(new Error("WordPress wasn't connected. Press Connect WordPress and choose Yes, I approve of this connection."))
+      : call({ method: "POST", body: JSON.stringify({ connect: { user_login: userLogin, password } }) }).finally(() => setReload((n) => n + 1));
+    connecting
+      .then(({ user }) => setNotice({ type: "success", text: `WordPress is connected as ${user}.` }))
+      .catch((err) => setNotice({ type: "error", text: err.message }));
+  }, [call]);
+
   useEffect(() => {
     let live = true;
     Promise.all([call(), supabase.from("posts").select("wordpress_id").not("wordpress_id", "is", null)])
       .then(([wp, { data, error }]) => {
         if (error) throw new Error(friendlyError(error));
         const taken = new Set((data || []).map((r) => r.wordpress_id));
-        if (live) setState({ loading: false, configured: wp.configured, posts: wp.posts.filter((p) => !taken.has(p.id)), error: "" });
+        if (live) setState({ loading: false, ...wp, posts: wp.posts.filter((p) => !taken.has(p.id)), error: wp.error || "" });
       })
       .catch((err) => live && setState({ loading: false, configured: true, posts: [], error: err.message }));
     return () => {
       live = false;
     };
-  }, [call, supabase]);
+  }, [call, supabase, reload]);
+
+  // Sends the admin to WordPress to approve an Application Password for
+  // this site; WordPress then returns to /admin with it in the link.
+  const connect = () => {
+    const back = `${window.location.origin}${window.location.pathname}`;
+    const url = new URL(`${state.site}/wp-admin/authorize-application.php`);
+    url.searchParams.set("app_name", "Coco's Care admin");
+    url.searchParams.set("app_id", WORDPRESS_APP_ID);
+    url.searchParams.set("success_url", back);
+    url.searchParams.set("reject_url", `${back}?wp=rejected`);
+    window.location.href = url.toString();
+  };
 
   const finish = async (id) => {
     if (busy) return;
@@ -79,10 +114,14 @@ function FromHandoffHero() {
   if (!state.loading && !state.configured) {
     return (
       <Card title="From Handoff Hero">
-        <p className="text-ink/75">
-          Not connected yet. Add <code className="font-mono text-sm">WORDPRESS_USERNAME</code> and <code className="font-mono text-sm">WORDPRESS_APP_PASSWORD</code> on Netlify (an
-          Application Password from the Coco&rsquo;s Care WordPress) and posts sent from Handoff Hero show up here.
-        </p>
+        <div className="space-y-3">
+          <Notice notice={notice} />
+          <p className="text-ink/75">
+            Connect the Coco&rsquo;s Care WordPress once and posts sent from Handoff Hero show up here. You&rsquo;ll sign in to WordPress with an Editor or Administrator
+            account and approve the connection.
+          </p>
+          <Button onClick={connect}>Connect WordPress</Button>
+        </div>
       </Card>
     );
   }
@@ -90,7 +129,7 @@ function FromHandoffHero() {
   return (
     <Card title="From Handoff Hero" aside={state.posts.length ? <span className="font-semibold text-ink/60">{state.posts.length} new</span> : null}>
       <div className="space-y-3">
-        <Notice notice={state.error ? { type: "error", text: state.error } : notice} />
+        <Notice notice={notice || (state.error ? { type: "error", text: state.error } : null)} />
         {state.loading ? (
           <div className="h-14 animate-pulse rounded-2xl bg-blush" aria-busy="true" />
         ) : state.posts.length === 0 ? (
@@ -106,6 +145,14 @@ function FromHandoffHero() {
               </li>
             ))}
           </ul>
+        )}
+        {!state.loading && (
+          <p className="text-sm text-ink/55">
+            {state.user ? `Connected to WordPress as ${state.user}. ` : ""}
+            <button type="button" onClick={connect} className="font-semibold underline underline-offset-2 hover:text-pink-deep">
+              {state.error ? "Connect WordPress again" : "Reconnect"}
+            </button>
+          </p>
         )}
       </div>
     </Card>
