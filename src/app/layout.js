@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
+import HideOnAdmin from "@/components/HideOnAdmin";
 import { SITE } from "@/lib/content";
 
 // Self-hosted (next/font/google fetches at build time, which has broken
@@ -48,11 +49,15 @@ export default function RootLayout({ children }) {
           Skip to content
         </a>
         <Providers>
-          <Header />
+          <HideOnAdmin>
+            <Header />
+          </HideOnAdmin>
           <main id="main" className="flex-1">
             {children}
           </main>
-          <Footer />
+          <HideOnAdmin>
+            <Footer />
+          </HideOnAdmin>
         </Providers>
       </body>
     </html>

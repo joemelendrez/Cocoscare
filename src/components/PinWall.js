@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { Parallax } from "@/components/Motion";
 import { CategoryIcon, Sparkle } from "@/components/Doodles";
-import { COLOR, categoryFor, SAMPLE_POSTS } from "@/lib/content";
+import { COLOR, categoryFor } from "@/lib/content";
 
 // Pinterest-style tall cards in columns that scroll at different speeds.
-// Sample posts stand in for real pin images until the blog is connected.
+// Shows a post's cover when it has one, else its category color.
 const HEIGHTS = ["h-72", "h-96", "h-80", "h-[22rem]", "h-64", "h-[26rem]"];
 const SPEEDS = [60, -50, 90];
 
@@ -14,16 +14,23 @@ function Pin({ post, i }) {
   const cat = categoryFor(post.category);
   return (
     <Link
-      href="/blog"
+      href={post.sample ? "/blog" : `/blog/${post.slug}`}
       className={`group relative flex rounded-[1.75rem] border-[3px] border-ink shadow-[6px_6px_0_var(--pink)] transition-transform duration-300 hover:-translate-y-1.5 hover:rotate-[-1.5deg] flex-col justify-between overflow-hidden p-5 ${COLOR[cat.color].bg} ${HEIGHTS[i % HEIGHTS.length]}`}
     >
       <div className="dots-ink absolute inset-0 opacity-60" aria-hidden="true" />
+      {post.cover_url && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- Supabase storage URLs */}
+          <img src={post.cover_url} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent" aria-hidden="true" />
+        </>
+      )}
       <span className="relative grid h-14 w-14 place-items-center rounded-full border-[2.5px] border-ink bg-paper transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110">
         <CategoryIcon name={cat.icon} className="h-9 w-9" />
       </span>
       <div className="relative">
         <span className="rounded-full border-2 border-ink bg-paper px-3 py-0.5 text-sm font-semibold">{cat.label}</span>
-        <p className="mt-3 font-display text-2xl leading-tight tracking-wide">{post.title}</p>
+        <p className={`mt-3 font-display text-2xl leading-tight tracking-wide ${post.cover_url ? "text-paper text-outline" : ""}`}>{post.title}</p>
       </div>
       <span className="absolute right-4 top-4 rounded-full border-2 border-ink bg-pink px-3 py-1 font-display text-sm tracking-wide text-paper opacity-0 transition-opacity group-hover:opacity-100">
         Save
@@ -32,9 +39,9 @@ function Pin({ post, i }) {
   );
 }
 
-export default function PinWall() {
+export default function PinWall({ posts }) {
   const columns = [[], [], []];
-  SAMPLE_POSTS.forEach((p, i) => columns[i % 3].push({ post: p, i }));
+  posts.slice(0, 9).forEach((p, i) => columns[i % 3].push({ post: p, i }));
   return (
     <section className="relative overflow-hidden bg-ink py-24 text-paper sm:py-32">
       <div className="dots absolute inset-0 opacity-40" aria-hidden="true" />

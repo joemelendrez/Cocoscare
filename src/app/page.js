@@ -6,11 +6,15 @@ import PinWall from "@/components/PinWall";
 import { CategoryCard, PickCard, PostCard, SectionTitle } from "@/components/Cards";
 import { Cookie, Flower, Heart, Sparkle, Star } from "@/components/Doodles";
 import { Parallax, Reveal, Stagger, StaggerItem } from "@/components/Motion";
-import { CATEGORIES, SAMPLE_PICKS, SAMPLE_POSTS } from "@/lib/content";
+import { CATEGORIES } from "@/lib/content";
+import { getPosts, getProducts } from "@/lib/data";
 
 const TILTS = [-2, 1.5, -1, 2];
 
-export default function Home() {
+export const revalidate = 60;
+
+export default async function Home() {
+  const [{ posts, sample }, { products }] = await Promise.all([getPosts({ limit: 9 }), getProducts({ limit: 4 })]);
   return (
     <>
       <Hero />
@@ -33,11 +37,11 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <Reveal>
           <SectionTitle eyebrow="Fresh from the kitchen table" title="Latest" accent="posts">
-            Real posts land here once the blog is connected.
+            {sample ? "Real posts land here once the blog is connected." : "New recipes, finds and outings, fresh from the kitchen table."}
           </SectionTitle>
         </Reveal>
         <Stagger className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {SAMPLE_POSTS.slice(0, 3).map((post) => (
+          {posts.slice(0, 3).map((post) => (
             <StaggerItem key={post.slug} className="h-full">
               <PostCard post={post} />
             </StaggerItem>
@@ -50,7 +54,7 @@ export default function Home() {
         </div>
       </section>
 
-      <PinWall />
+      {posts.length > 3 && <PinWall posts={posts} />}
 
       <section className="relative overflow-hidden py-24 sm:py-32">
         <Parallax speed={120} className="absolute left-[6%] top-10">
@@ -97,8 +101,8 @@ export default function Home() {
             </SectionTitle>
           </Reveal>
           <Stagger className="mt-12 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-            {SAMPLE_PICKS.slice(0, 4).map((pick, i) => (
-              <StaggerItem key={pick.name} tilt={TILTS[i] / 2} className="h-full">
+            {products.map((pick, i) => (
+              <StaggerItem key={pick.slug || pick.name} tilt={TILTS[i] / 2} className="h-full">
                 <PickCard pick={pick} />
               </StaggerItem>
             ))}

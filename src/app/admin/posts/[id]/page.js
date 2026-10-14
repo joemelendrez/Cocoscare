@@ -1,0 +1,307 @@
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import RecipeCard from "@/components/RecipeCard";
+import { ProductEmbed } from "@/components/Cards";
+import { useRecord } from "@/components/admin/useRecord";
+import { useAdmin } from "@/components/admin/AdminShell";
+import { Button, Card, DeleteButton, Field, Notice, PhotoInput, Segmented, Select, StatusPill, TextArea, TextInput, friendlyError, uploadPhoto } from "@/components/admin/AdminUI";
+import { CATEGORIES } from "@/lib/content";
+import { productSlugsIn } from "@/lib/data";
+import { bodySegments } from "@/lib/postBody";
+import { slugify } from "@/lib/recipe";
+
+const BLANK = {
+  title: "",
+  slug: "",
+  category: "recipes",
+  excerpt: "",
+  body: "",
+  cover_url: null,
+  recipe_id: null,
+  status: "draft",
+  published_at: null,
+};
+
+const STATUSES = [
+  { value: "draft", label: "Draft" },
+  { value: "review", label: "Ready for review" },
+  { value: "published", label: "Live" },
+];
+
+// Recipes and picks to choose from, drafts included.
+function useLibrary(supabase) {
+  const [lib, setLib] = useState({ recipes: [], products: [], loaded: false });
+  useEffect(() => {
+    let live = true;
+    Promise.all([
+      supabase.from("recipes").select("*").order("updated_at", { ascending: false }),
+      supabase.from("products").select("id, slug, name, note, image_url, url, price_label, section, color, status").order("name"),
+    ]).then(([r, p]) => {
+      if (live) setLib({ recipes: r.data || [], products: p.data || [], loaded: true });
+    });
+    return () => {
+      live = false;
+    };
+  }, [supabase]);
+  return lib;
+}
+
+function PostForm({ initial, rec }) {
+  const { supabase } = useAdmin();
+  const lib = useLibrary(supabase);
+  const [form, setForm] = useState(() => ({ ...BLANK, ...initial, excerpt: initial.excerpt || "", body: initial.body || "" }));
+  const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
+  const [picking, setPicking] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [tab, setTab] = useState("write");
+  const bodyRef = useRef(null);
+  const photoRef = useRef(null);
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+
+  const recipe = lib.recipes.find((r) => r.id === form.recipe_id) || null;
+  const usedSlugs = [...new Set(productSlugsIn(form.body))];
+  const usedProducts = lib.products.filter((p) => usedSlugs.includes(p.slug));
+  const missingSlugs = lib.loaded ? usedSlugs.filter((s) => !lib.products.some((p) => p.slug === s)) : [];
+  const canSave = form.title.trim() && form.slug;
+
+  // Inserts text on its own lines at the cursor (or at the end).
+  const insert = (text) => {
+    const el = bodyRef.current;
+    const body = form.body;
+    const at = el && document.activeElement === el ? el.selectionStart : body.length;
+    const before = body.slice(0, at).replace(/\s*$/, "");
+    const after = body.slice(at).replace(/^\s*/, "");
+    const chunk = `${before ? "\n\n" : ""}${text}\n\n`;
+    set({ body: `${before}${chunk}${after}` });
+    requestAnimationFrame(() => {
+      if (!el) return;
+      el.focus();
+      const pos = before.length + chunk.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  const addPhoto = async (file) => {
+    if (!file) return;
+    setPhotoBusy(true);
+    const { url, error } = await uploadPhoto(supabase, "posts", file);
+    setPhotoBusy(false);
+    if (error) rec.setNotice({ type: "error", text: error });
+    else insert(`![Describe the photo](${url})`);
+  };
+
+  const save = async () => {
+    const goingLive = form.status === "published";
+    const values = {
+      title: form.title.trim(),
+      slug: form.slug,
+      category: form.category,
+      excerpt: form.excerpt.trim() || null,
+      body: form.body,
+      cover_url: form.cover_url,
+      recipe_id: form.recipe_id || null,
+      status: form.status,
+      published_at: goingLive ? form.published_at || new Date().toISOString() : form.published_at,
+    };
+
+    // A live post shows its recipe and picks only if they're live too.
+    let alsoLive = [];
+    if (goingLive) {
+      const drafts = [
+        ...(recipe && recipe.status !== "published" ? [{ table: "recipes", id: recipe.id, name: recipe.title }] : []),
+        ...usedProducts.filter((p) => p.status !== "published").map((p) => ({ table: "products", id: p.id, name: p.name })),
+      ];
+      for (const d of drafts) {
+        const { error } = await supabase.from(d.table).update({ status: "published" }).eq("id", d.id);
+        if (error) return rec.setNotice({ type: "error", text: friendlyError(error) });
+        alsoLive.push(d.name);
+      }
+    }
+
+    const message = goingLive
+      ? `Live!${alsoLive.length ? ` Also put live: ${alsoLive.join(", ")}.` : ""}`
+      : form.status === "review"
+        ? "Saved and marked ready for review."
+        : "Saved as a draft.";
+    const saved = await rec.save(values, { message, paths: ["/", "/blog", `/blog/${values.slug}`, ...(alsoLive.length ? ["/shop"] : [])] });
+    if (saved) set({ published_at: saved.published_at });
+  };
+
+  const segments = bodySegments(form.body, usedProducts);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <Link href="/admin" className="text-sm font-semibold text-ink/60 hover:underline">
+            ← Posts
+          </Link>
+          <h1 className="font-display text-4xl tracking-wide">{rec.isNew ? "New post" : form.title || "Post"}</h1>
+          {!rec.isNew && (
+            <p className="mt-1 flex items-center gap-2 text-sm text-ink/60">
+              Saved as <StatusPill status={rec.record.status} />
+              {rec.record.status === "published" && (
+                <Link href={`/blog/${rec.record.slug}`} target="_blank" className="font-semibold hover:underline">
+                  Open post ↗
+                </Link>
+              )}
+            </p>
+          )}
+        </div>
+        <Segmented label="Status" value={form.status} onChange={(status) => set({ status })} options={STATUSES} />
+      </div>
+
+      <Card title="The basics">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Title" className="sm:col-span-2">
+            <TextInput
+              value={form.title}
+              placeholder="Our favorite rainy-day spots in town"
+              onChange={(e) => set({ title: e.target.value, ...(slugTouched ? {} : { slug: slugify(e.target.value) }) })}
+            />
+          </Field>
+          <Field label="Category">
+            <Select value={form.category} onChange={(e) => set({ category: e.target.value })} options={CATEGORIES.map((c) => ({ value: c.key, label: c.label }))} />
+          </Field>
+          <Field label="Link name" hint="Lowercase letters, numbers and dashes.">
+            <TextInput
+              value={form.slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                set({ slug: slugify(e.target.value) });
+              }}
+            />
+          </Field>
+          <Field label="Short summary" className="sm:col-span-2" hint="Shows on the blog card and in Google. About 150 characters.">
+            <TextArea rows={2} value={form.excerpt} onChange={(e) => set({ excerpt: e.target.value })} />
+          </Field>
+          <span className={`-mt-3 text-right text-xs sm:col-span-2 ${form.excerpt.length > 160 ? "font-semibold text-pink-deep" : "text-ink/50"}`}>{form.excerpt.length}/160</span>
+          <div className="sm:col-span-2">
+            <PhotoInput supabase={supabase} folder="posts" value={form.cover_url} onChange={(cover_url) => set({ cover_url })} label="Cover photo (best tall, like a Pin)" />
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Recipe card" aside={<Link href="/admin/recipes/new" className="text-sm font-semibold text-pink-deep hover:underline">New recipe</Link>}>
+        <Select
+          aria-label="Recipe"
+          value={form.recipe_id || ""}
+          onChange={(e) => set({ recipe_id: e.target.value || null })}
+          options={[{ value: "", label: lib.loaded ? "No recipe card" : "Loading…" }, ...lib.recipes.map((r) => ({ value: r.id, label: `${r.title}${r.status === "published" ? "" : " (draft)"}` }))]}
+        />
+        <p className="mt-2 text-sm text-ink/60">It shows after the post with timers, a servings scaler and a print button.</p>
+      </Card>
+
+      <Card
+        title="The post"
+        aside={<Segmented label="View" value={tab} onChange={setTab} options={[{ value: "write", label: "Write" }, { value: "preview", label: "Preview" }]} />}
+      >
+        {tab === "write" ? (
+          <>
+            <div className="mb-3 flex flex-wrap gap-2">
+              <Button variant="ghost" className="py-1.5 text-sm" onClick={() => insert("## New section")}>
+                + Heading
+              </Button>
+              <Button variant="ghost" className="py-1.5 text-sm" disabled={photoBusy} onClick={() => photoRef.current?.click()}>
+                {photoBusy ? "Uploading…" : "+ Photo"}
+              </Button>
+              <Button variant="ghost" className="py-1.5 text-sm" onClick={() => setPicking((v) => !v)} aria-expanded={picking}>
+                + Product card
+              </Button>
+              <input
+                ref={photoRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                tabIndex={-1}
+                onChange={(e) => {
+                  addPhoto(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            {picking && (
+              <div className="mb-3 max-h-72 overflow-y-auto rounded-2xl border-2 border-dashed border-ink/50 p-2">
+                {lib.products.length === 0 ? (
+                  <p className="p-2 text-sm text-ink/70">
+                    No picks yet. <Link href="/admin/products/new" className="font-semibold text-pink-deep hover:underline">Add one in Shop</Link> first.
+                  </p>
+                ) : (
+                  <ul>
+                    {lib.products.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left hover:bg-blush"
+                          onClick={() => {
+                            insert(`{{product:${p.slug}}}`);
+                            setPicking(false);
+                          }}
+                        >
+                          <span className="font-semibold">{p.name}</span>
+                          <span className="text-xs text-ink/60">{p.status === "published" ? "" : "draft"}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            <TextArea
+              ref={bodyRef}
+              aria-label="Post text"
+              rows={18}
+              value={form.body}
+              onChange={(e) => set({ body: e.target.value })}
+              placeholder={"Start with a line or two about why this matters to you.\n\n## A heading\n\nShort paragraphs read best on phones."}
+              className="font-[inherit]"
+            />
+            <p className="mt-2 text-sm text-ink/60">
+              ## makes a heading, **bold**, *italic*, and a line starting with - makes a list. Product cards sit on their own line.
+            </p>
+            {missingSlugs.length > 0 && (
+              <p className="mt-2 text-sm font-semibold text-pink-deep">No pick has the link name {missingSlugs.join(", ")}, so that card won&rsquo;t show.</p>
+            )}
+          </>
+        ) : (
+          <div className="space-y-6">
+            {form.cover_url && (
+              // eslint-disable-next-line @next/next/no-img-element -- storage URL preview
+              <img src={form.cover_url} alt="" className="max-h-96 w-full rounded-[1.25rem] border-[3px] border-ink object-cover" />
+            )}
+            <div className="post-body">
+              {segments.length === 0 && <p className="text-ink/60">Nothing written yet.</p>}
+              {segments.map((s, i) => (s.type === "html" ? <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} /> : <ProductEmbed key={i} product={s.product} />))}
+            </div>
+            {recipe && <RecipeCard recipe={recipe} />}
+          </div>
+        )}
+      </Card>
+
+      <div className="sticky bottom-3 z-30 space-y-3 rounded-[1.75rem] border-[3px] border-ink bg-paper p-3 shadow-[4px_4px_0_var(--ink)]">
+        <Notice notice={rec.notice} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={save} disabled={!canSave || rec.saving}>
+            {rec.saving ? "Saving…" : form.status === "published" ? "Save & put live" : form.status === "review" ? "Save & send for review" : "Save draft"}
+          </Button>
+          {!rec.isNew && (
+            <span className="ml-auto">
+              <DeleteButton onDelete={() => rec.remove(["/", "/blog", `/blog/${rec.record.slug}`])} label="Delete post" />
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PostEditor() {
+  const { id } = useParams();
+  const rec = useRecord("posts", id, BLANK, "/admin/posts");
+  if (rec.missing) return <Notice notice={{ type: "error", text: "That post doesn't exist (it may have been deleted)." }} />;
+  if (!rec.record) return <p className="animate-pulse font-semibold text-ink/60">Loading…</p>;
+  return <PostForm key={rec.record.id || "new"} initial={rec.record} rec={rec} />;
+}
