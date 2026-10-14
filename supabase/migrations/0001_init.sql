@@ -31,6 +31,7 @@ create policy "admins can see the admin list" on public.admins
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   new.updated_at = now();
