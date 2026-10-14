@@ -24,7 +24,17 @@ async function wp(path) {
   });
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
-    const error = new Error(res.status === 401 || res.status === 403 ? "WordPress didn't accept the login. Check WORDPRESS_USERNAME and WORDPRESS_APP_PASSWORD." : detail.message || `WordPress answered ${res.status}`);
+    // WordPress answers "Invalid parameter(s): status" when the login works
+    // but that user can't edit posts on this subsite (on a multisite, a
+    // network user who isn't added to the site has no role there).
+    const cantSeeDrafts = detail.code === "rest_invalid_param" && detail.data?.params?.status;
+    const error = new Error(
+      res.status === 401 || res.status === 403
+        ? "WordPress didn't accept the login. Check WORDPRESS_USERNAME and WORDPRESS_APP_PASSWORD."
+        : cantSeeDrafts
+          ? `WordPress signed in as ${USER}, but that user can't see drafts on this site. Add them to the Coco's Care site as an Editor or Administrator, or use an Application Password from a user who is.`
+          : detail.message || `WordPress answered ${res.status}`,
+    );
     error.status = res.status === 404 ? 404 : 502;
     throw error;
   }
