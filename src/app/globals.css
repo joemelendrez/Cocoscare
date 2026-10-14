@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+/* Coco's Care palette. Hot pink, ink black and white carry the brand; the
+   periwinkle (her shirt in the logo), butter (the cookie dough) and mint
+   are accents for category colors and stickers, never large surfaces. */
+:root {
+  --pink: #ff0f9a;
+  --pink-deep: #d1007c;
+  --pink-soft: #ffd2ec;
+  --blush: #fff2f9;
+  --ink: #161016;
+  --paper: #ffffff;
+  --periwinkle: #7d93e8;
+  --butter: #ffcb47;
+  --mint: #73dfbf;
+}
+
+@theme inline {
+  --color-pink: var(--pink);
+  --color-pink-deep: var(--pink-deep);
+  --color-pink-soft: var(--pink-soft);
+  --color-blush: var(--blush);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-periwinkle: var(--periwinkle);
+  --color-butter: var(--butter);
+  --color-mint: var(--mint);
+  --font-sans: var(--font-fredoka);
+  --font-display: var(--font-lilita);
+}
+
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-fredoka), ui-rounded, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--pink);
+  color: var(--paper);
+}
+
+/* Cartoon sticker look: a thick ink outline and a hard offset shadow that
+   grows when the thing is hovered, like it's lifting off the page. */
+@utility sticker {
+  border: 3px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+@utility sticker-sm {
+  border: 2.5px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+@utility lift {
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  &:hover {
+    transform: translate(-3px, -3px) rotate(-1deg);
+    box-shadow: 8px 8px 0 var(--ink);
+  }
+  &:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+}
+
+/* Outlined bubble letters for big display words. */
+@utility text-outline {
+  -webkit-text-stroke: 2px var(--ink);
+  paint-order: stroke fill;
+}
+
+/* Polka dots for pink panels. */
+@utility dots {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--paper) 22%, transparent) 2px,
+    transparent 2.5px
+  );
+  background-size: 22px 22px;
+}
+
+@utility dots-ink {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--ink) 9%, transparent) 2px,
+    transparent 2.5px
+  );
+  background-size: 22px 22px;
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility animate-wiggle {
+  animation: wiggle 2.6s ease-in-out infinite;
+}
+
+@utility animate-bob {
+  animation: bob 3.4s ease-in-out infinite;
+}
+
+@utility animate-spin-slow {
+  animation: spin-slow 18s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-wiggle,
+  .animate-bob,
+  .animate-spin-slow {
+    animation: none;
+  }
+}
