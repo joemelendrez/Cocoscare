@@ -4,6 +4,9 @@
 
 # NEXT_PUBLIC_* values are meant to be in the browser bundle, so Netlify's
 # secrets scan would always find them there. WORDPRESS_APP_PASSWORD stays
-# scanned: it's only read server-side (src/lib/wordpressInbox.js).
+# scanned: it's only read server-side (src/lib/wordpressInbox.js). Turbopack's
+# build cache records env values, but the cache is never deployed, so its
+# folder is skipped (same as Handoff Hero).
 [build.environment]
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**,.next/cache/**"
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SITE_URL"
