@@ -20,11 +20,11 @@ export function withHeadingIds(segments, { endRecipe = null } = {}) {
   };
   const out = segments.map((s) => {
     if (s.type === "faq") {
-      headings.push({ id: "faq", text: s.title || "FAQ", level: 2 });
+      headings.push({ id: "faq", text: s.title || "FAQ", level: 2, kind: "faq" });
       return s;
     }
     if (s.type === "recipe" && s.anchor) {
-      headings.push({ id: "recipe", text: `Recipe: ${s.recipe.title}`, level: 2 });
+      headings.push({ id: "recipe", text: s.recipe.title, level: 2, kind: "recipe" });
       return s;
     }
     if (s.type !== "html") return s;
@@ -39,6 +39,17 @@ export function withHeadingIds(segments, { endRecipe = null } = {}) {
     });
     return { ...s, html };
   });
-  if (endRecipe) headings.push({ id: "recipe", text: `Recipe: ${endRecipe.title}`, level: 2 });
+  if (endRecipe) headings.push({ id: "recipe", text: endRecipe.title, level: 2, kind: "recipe" });
+  // Each heading's main section, and a running number for the main ones
+  // (the FAQ and recipe get icons instead).
+  let number = 0;
+  let section = null;
+  for (const h of headings) {
+    if (h.level === 2) {
+      section = h.id;
+      if (!h.kind) number += 1;
+    }
+    Object.assign(h, { number, section });
+  }
   return { segments: out, headings };
 }
