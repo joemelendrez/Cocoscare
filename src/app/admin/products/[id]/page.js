@@ -10,6 +10,7 @@ import { Button, Card, CopyCode, DeleteButton, Field, Notice, PhotoInput, Segmen
 import { SHOP_SECTIONS } from "@/lib/content";
 import { cardToken } from "@/lib/data";
 import { slugify } from "@/lib/recipe";
+import { withAmazonTag } from "@/lib/amazon";
 
 const BLANK = {
   name: "",
@@ -56,7 +57,7 @@ function ProductForm({ initial, rec }) {
     slug: form.slug,
     note: form.note.trim() || null,
     image_url: form.image_url,
-    url: url || null,
+    url: withAmazonTag(url) || null,
     price_label: form.price_label.trim() || null,
     section: form.section,
     color: form.color,
@@ -96,8 +97,8 @@ function ProductForm({ initial, rec }) {
           <Field label="Why you love it" className="sm:col-span-2" hint="One or two sentences in your own words.">
             <TextArea rows={2} value={form.note} onChange={(e) => set({ note: e.target.value })} placeholder="The only plates that survived my toddler's throwing phase." />
           </Field>
-          <Field label="Shop link" className="sm:col-span-2" hint="Your Amazon or affiliate link. Must start with https://">
-            <TextInput type="url" inputMode="url" value={form.url} placeholder="https://amzn.to/…" onChange={(e) => set({ url: e.target.value })} className={badUrl ? "border-pink-deep" : ""} />
+          <Field label="Shop link" className="sm:col-span-2" hint="Paste any Amazon product page and our tag is added for you. Other affiliate links work too. Must start with https://">
+            <TextInput type="url" inputMode="url" value={form.url} placeholder="https://www.amazon.com/dp/…" onChange={(e) => set({ url: e.target.value })} className={badUrl ? "border-pink-deep" : ""} />
           </Field>
           {badUrl && <p className="-mt-2 text-sm font-semibold text-pink-deep sm:col-span-2">That link needs to start with https://</p>}
           <Field label="Price (optional)" hint="Like $24 or Under $30.">

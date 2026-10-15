@@ -1,6 +1,7 @@
 import { marked } from "marked";
 import { CARD_TOKEN, cardLines } from "@/lib/data";
 import { stripTags } from "@/lib/wordpress";
+import { tagAmazonLinksInHtml } from "@/lib/amazon";
 
 // Splits a post body at its {{product:…}} / {{recipe:…}} lines so each card
 // renders between the HTML chunks. Bodies are Markdown written in /admin,
@@ -8,7 +9,7 @@ import { stripTags } from "@/lib/wordpress";
 // their HTML is trusted. A code with no matching live card shows nothing.
 export function bodySegments(body = "", { products = [], recipes = [], html = false } = {}) {
   const text = html ? body : cardLines(body);
-  const render = (chunk) => (html ? chunk : marked.parse(chunk));
+  const render = (chunk) => tagAmazonLinksInHtml(html ? chunk : marked.parse(chunk));
   const find = { product: new Map(products.map((p) => [p.slug, p])), recipe: new Map(recipes.map((r) => [r.slug, r])) };
   const segments = [];
   let last = 0;
