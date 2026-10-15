@@ -73,11 +73,22 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
 
   if (headings.length < 2) return null;
 
-  const rows = headings;
+  // Recipes get their own group under the sections, so the count only
+  // covers what's numbered ("3 of 7" with numbers 1 to 7).
+  const rows = headings.filter((h) => h.kind !== "recipe");
+  const recipes = headings.filter((h) => h.kind === "recipe");
+  const mains = rows.filter((r) => r.level === 2);
+  const numbered = mains.filter((r) => !r.kind).length;
   // A small heading lights up its section too, so you always see where you are.
-  const activeIndex = rows.findIndex((r) => r.id === active);
-  const currentSection = live ? rows[activeIndex]?.section : null;
-  const parts = rows.filter((r) => r.level === 2).length;
+  const current = live ? headings.find((h) => h.id === active) : null;
+  const currentSection = current?.section ?? null;
+  const inRecipe = current?.kind === "recipe";
+  const countLabel = [
+    numbered && `${numbered} section${numbered === 1 ? "" : "s"}`,
+    recipes.length && `${recipes.length} recipe${recipes.length === 1 ? "" : "s"}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const links = (onPick) =>
     rows.map((h) => {
@@ -86,6 +97,8 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
         onPick?.(e);
       };
       if (h.level === 3) {
+        // On the sidebar a section's subheadings fold away until you're in it.
+        if (live && h.section !== currentSection) return null;
         const on = live && active === h.id;
         return (
           <li key={h.id} className="ml-[1.45rem] border-l-[2.5px] border-dashed border-ink/25 pl-4">
@@ -130,14 +143,54 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
       );
     });
 
+  const recipeGroup = (onPick) =>
+    recipes.length > 0 && (
+      <details open={inRecipe || undefined} className="group/recipes mt-3 rounded-2xl border-[2.5px] border-ink bg-butter/25">
+        <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2 font-display tracking-wide [&::-webkit-details-marker]:hidden">
+          <Cookie className="h-6 w-6 shrink-0" />
+          <span className="flex-1">Recipes</span>
+          <span className="rounded-full border-2 border-ink bg-paper px-2 py-0.5 font-sans text-xs font-bold tabular-nums tracking-normal">
+            {recipes.length}
+          </span>
+          <span aria-hidden="true" className="text-sm transition-transform group-open/recipes:rotate-180">
+            ▾
+          </span>
+        </summary>
+        <ul className="space-y-1 px-2 pb-2">
+          {recipes.map((h) => {
+            const on = live && active === h.id;
+            return (
+              <li key={h.id}>
+                <a
+                  href={`#${h.id}`}
+                  onClick={(e) => {
+                    go(e, h.id);
+                    onPick?.(e);
+                  }}
+                  aria-current={on ? "location" : undefined}
+                  className={`block rounded-xl border-2 px-3 py-1.5 font-display leading-tight tracking-wide transition-all ${
+                    on ? "border-ink bg-paper shadow-[2px_2px_0_var(--ink)]" : "border-transparent hover:bg-paper"
+                  }`}
+                >
+                  {h.text}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </details>
+    );
+
+  const closeMenu = (e) => e.currentTarget.closest("details.toc-menu")?.removeAttribute("open");
+
   if (!live)
     return (
-      <details className="sticker group mb-10 rounded-[1.5rem] bg-paper lg:hidden">
+      <details className="toc-menu sticker group mb-10 rounded-[1.5rem] bg-paper lg:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
           <span className="flex items-center gap-2.5 font-display text-lg tracking-wide">
             <Heart className="h-6 w-6" /> In this post
             <span className="rounded-full border-2 border-ink bg-butter px-2 py-0.5 font-sans text-xs font-bold tracking-normal">
-              {parts} parts
+              {countLabel}
             </span>
           </span>
           <span
@@ -147,31 +200,31 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
             +
           </span>
         </summary>
-        <ul className="border-t-2 border-dashed border-ink/25 px-3 pb-4 pt-3">
-          {links((e) => e.currentTarget.closest("details")?.removeAttribute("open"))}
-        </ul>
+        <ul className="border-t-2 border-dashed border-ink/25 px-3 pb-4 pt-3">{links(closeMenu)}</ul>
+        <div className="px-3 pb-4">{recipeGroup(closeMenu)}</div>
       </details>
     );
 
-  const part = rows.filter((r) => r.level === 2).findIndex((r) => r.id === currentSection) + 1;
+  const section = mains.find((r) => r.id === currentSection);
+  const where = inRecipe ? "Recipe" : section?.kind === "faq" ? "FAQ" : numbered ? `${section?.number || 1} of ${numbered}` : "";
+  const order = headings.findIndex((h) => h.id === active);
   return (
     <nav aria-label="In this post" className="sticky top-28 hidden max-h-[calc(100vh-9rem)] overflow-y-auto pb-2 pr-2 lg:block">
       <div className="sticker rounded-[1.5rem] bg-paper p-4">
         <div className="flex items-center justify-between gap-2 px-1 pb-3">
-          <p className="flex items-center gap-2 font-display text-lg tracking-wide">
+          <p className="flex items-center gap-2 whitespace-nowrap font-display text-lg tracking-wide">
             <Heart className="h-6 w-6" /> In this post
           </p>
-          <span className="rounded-full border-2 border-ink bg-butter px-2 py-0.5 text-xs font-bold tabular-nums">
-            {part || 1} of {parts}
-          </span>
+          <span className="rounded-full border-2 border-ink bg-butter px-2 py-0.5 text-xs font-bold tabular-nums">{where}</span>
         </div>
         <div className="mx-1 mb-4 h-2.5 overflow-hidden rounded-full border-2 border-ink bg-paper" aria-hidden="true">
           <div
             className="h-full bg-pink transition-[width] duration-300"
-            style={{ width: `${((activeIndex + 1) / rows.length) * 100}%` }}
+            style={{ width: `${((order + 1) / headings.length) * 100}%` }}
           />
         </div>
         <ul className="text-sm">{links()}</ul>
+        {recipeGroup()}
       </div>
     </nav>
   );
