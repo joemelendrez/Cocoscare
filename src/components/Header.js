@@ -9,6 +9,9 @@ import { COLOR, NAV, SITE } from "@/lib/content";
 import { Bubble, Heart, Sparkle, Star } from "@/components/Doodles";
 
 const JELLY = { type: "spring", stiffness: 420, damping: 18 };
+// The squish is keyframes, which a spring can't run (it threw on every
+// page load and stopped other animations, like the page titles, starting).
+const SQUISH = { duration: 0.45, ease: "easeOut" };
 
 function isActive(pathname, href) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -92,7 +95,7 @@ export default function Header() {
                     <motion.span
                       layoutId="nav-blob"
                       className={`absolute inset-0 rounded-full border-[2.5px] border-ink ${COLOR[blobColor].bg}`}
-                      transition={JELLY}
+                      transition={{ ...JELLY, scaleX: SQUISH, scaleY: SQUISH }}
                       animate={{ scaleX: [1, 1.12, 0.96, 1], scaleY: [1, 0.86, 1.04, 1] }}
                     />
                   )}
