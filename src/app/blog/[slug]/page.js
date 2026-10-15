@@ -4,6 +4,7 @@ import FaqBlock from "@/components/FaqBlock";
 import ReadingProgress from "@/components/ReadingProgress";
 import TableOfContents from "@/components/TableOfContents";
 import RecipeCard from "@/components/RecipeCard";
+import RecipeJump from "@/components/RecipeJump";
 import { ProductEmbed } from "@/components/Cards";
 import { CategoryIcon, Heart } from "@/components/Doodles";
 import { COLOR, SITE, categoryFor } from "@/lib/content";
@@ -103,7 +104,7 @@ export default async function PostPage({ params }) {
       {faq && <JsonLd item={faq} />}
       {recipe && <JsonLd item={recipeSchema(recipe, { url, author: "Coco", published: post.published_at })} />}
 
-      <header className={`relative overflow-hidden border-b-[3px] border-ink pb-14 pt-32 sm:pt-36 ${COLOR[cat.color].hero}`}>
+      <header className={`relative z-10 border-b-[3px] border-ink pb-14 pt-32 sm:pt-36 ${COLOR[cat.color].hero}`}>
         <div className="relative mx-auto max-w-3xl px-5 text-center">
           <Link
             href="/blog"
@@ -128,22 +129,7 @@ export default async function PostPage({ params }) {
               Jump to recipe ↓
             </a>
           )}
-          {jumps.length > 1 && (
-            <div className="mt-6">
-              <p className="font-display text-lg tracking-wide">Jump to a recipe ↓</p>
-              <div className="mt-3 flex flex-wrap justify-center gap-2.5">
-                {jumps.map((j) => (
-                  <a
-                    key={j.id}
-                    href={`#${j.id}`}
-                    className={`lift rounded-full border-[3px] border-ink bg-ink px-5 py-2 font-display tracking-wide text-paper ${jumpShadow}`}
-                  >
-                    {j.title}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
+          {jumps.length > 1 && <RecipeJump jumps={jumps} shadow={jumpShadow} />}
         </div>
       </header>
 
