@@ -49,7 +49,7 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
             onPick?.(e);
           }}
           className={`block rounded-xl py-1.5 pr-2 leading-snug transition-colors ${indent(h.level)} ${
-            active === h.id ? "bg-pink-soft font-semibold text-ink" : "text-ink/70 hover:bg-pink-soft/50 hover:text-ink"
+            variant !== "mobile" && active === h.id ? "bg-pink-soft font-semibold text-ink" : "text-ink/70 hover:bg-pink-soft/50 hover:text-ink"
           }`}
         >
           {h.text}
