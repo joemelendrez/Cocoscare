@@ -15,6 +15,9 @@ const INK = "#161016";
 const BAND = { pink: PINK, butter: "#ffcb47", periwinkle: "#7d93e8", mint: "#73dfbf" };
 
 const font = readFile(new URL("../../../fonts/LilitaOne.ttf", import.meta.url));
+// The round Coco sticker (public/logo.webp as a 260px PNG, since Satori
+// can't draw WebP) sits in the top-right corner of every pin.
+const logo = readFile(new URL("./logo.png", import.meta.url)).then((b) => `data:image/png;base64,${b.toString("base64")}`);
 
 // Satori draws JPEG and PNG only, so a WebP cover (some WordPress uploads)
 // leaves the photo out rather than failing the whole image.
@@ -47,7 +50,17 @@ export async function GET(_req, { params }) {
   const photo = await coverData(post.recipe?.image_url || post.recipes?.[0]?.image_url || post.cover_url);
 
   return new ImageResponse(
-    <div style={{ width: W, height: H, display: "flex", flexDirection: "column", background: band, fontFamily: "Lilita" }}>
+    <div
+      style={{
+        width: W,
+        height: H,
+        display: "flex",
+        flexDirection: "column",
+        background: band,
+        fontFamily: "Lilita",
+        position: "relative",
+      }}
+    >
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element -- Satori, not the DOM
         <img src={photo} alt="" width={W} height={860} style={{ width: W, height: 860, objectFit: "cover" }} />
@@ -85,6 +98,8 @@ export async function GET(_req, { params }) {
         </div>
         <div style={{ display: "flex", marginTop: 30, fontSize: 40, opacity: 0.9 }}>cocoscare.com</div>
       </div>
+      {/* eslint-disable-next-line @next/next/no-img-element -- Satori, not the DOM */}
+      <img src={await logo} alt="" width={210} height={210} style={{ position: "absolute", top: 36, right: 36 }} />
     </div>,
     {
       width: W,
