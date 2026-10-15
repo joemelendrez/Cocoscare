@@ -15,6 +15,37 @@
   --mint: #73dfbf;
 }
 
+/* Dark mode: the same sticker look flipped. Pages and cards go a deep
+   plum, text and the sticker outlines/shadows go cream, and the pink tints
+   darken. Pastel and hot pink panels keep the light palette inside them
+   (dark ink text and outlines, white on pink), so they read exactly as in
+   light mode. Set by data-theme on <html> (see ThemeToggle); admin forces
+   light with data-theme="light". */
+[data-theme="dark"] {
+  --ink: #fbeef6;
+  --paper: #1d1420;
+  --blush: #2b1b2c;
+  --pink-soft: #4d1b3d;
+  --pink-deep: #ff7cc6;
+  color-scheme: dark;
+}
+
+[data-theme="light"],
+[data-theme="dark"] :is(.bg-pink, .bg-butter, .bg-mint, .bg-periwinkle) {
+  --ink: #161016;
+  --paper: #ffffff;
+  --blush: #fff2f9;
+  --pink-soft: #ffd2ec;
+  --pink-deep: #d1007c;
+  color-scheme: light;
+}
+
+/* Pastel panels set their own text color so text inside them that just
+   inherits the page color stays dark. */
+[data-theme="dark"] :is(.bg-butter, .bg-mint, .bg-periwinkle) {
+  color: var(--ink);
+}
+
 @theme inline {
   --color-pink: var(--pink);
   --color-pink-deep: var(--pink-deep);

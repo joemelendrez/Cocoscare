@@ -45,6 +45,12 @@ export function withHeadingIds(segments, { endRecipe = null } = {}) {
   let number = 0;
   let section = null;
   for (const h of headings) {
+    // Recipe cards are listed in their own group, so a subheading after one
+    // still belongs to the section before it.
+    if (h.kind === "recipe") {
+      Object.assign(h, { number: 0, section: h.id });
+      continue;
+    }
     if (h.level === 2) {
       section = h.id;
       if (!h.kind) number += 1;

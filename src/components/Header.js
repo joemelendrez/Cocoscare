@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { COLOR, NAV, SITE } from "@/lib/content";
 import { Bubble, Heart, Sparkle, Star } from "@/components/Doodles";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const JELLY = { type: "spring", stiffness: 420, damping: 18 };
 // The squish is keyframes, which a spring can't run (it threw on every
@@ -115,6 +116,7 @@ export default function Header() {
           </ul>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link
               href="/shop"
               className="hidden rounded-full border-[2.5px] border-ink bg-ink px-5 py-2.5 font-display text-lg tracking-wide text-paper shadow-[4px_4px_0_var(--pink)] transition-transform hover:-translate-y-0.5 hover:rotate-[-2deg] lg:block"

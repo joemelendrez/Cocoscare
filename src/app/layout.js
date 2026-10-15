@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import HideOnAdmin from "@/components/HideOnAdmin";
 import { SITE } from "@/lib/content";
+import { THEME_SCRIPT } from "@/components/ThemeToggle";
 
 // Self-hosted (next/font/google fetches at build time, which has broken
 // Netlify builds on Joseph's other sites).
@@ -40,7 +41,11 @@ export const viewport = { themeColor: "#ff0f9a" };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${lilita.variable} ${fredoka.variable} h-full antialiased`}>
+    // suppressHydrationWarning: THEME_SCRIPT sets data-theme before React loads.
+    <html lang="en" className={`${lilita.variable} ${fredoka.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <a
           href="#main"
