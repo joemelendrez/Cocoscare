@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Cookie, Heart } from "@/components/Doodles";
 import { jumpTo } from "@/lib/jumpTo";
 
@@ -36,6 +36,7 @@ function Badge({ heading, number, on }) {
 export default function TableOfContents({ headings, variant = "sidebar" }) {
   const live = variant !== "mobile";
   const [active, setActive] = useState(headings[0]?.id ?? "");
+  const navRef = useRef(null);
 
   // The section you're in is the last heading that has scrolled up past
   // the floating header.
@@ -61,6 +62,18 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
       window.removeEventListener("resize", onScroll);
     };
   }, [headings, live]);
+
+  // A long list scrolls inside the card, so follow along: keep the current
+  // section near the top of the card as you read down the post. Only the
+  // card's own list moves, never the page.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!live || !nav || nav.scrollHeight <= nav.clientHeight) return;
+    const link = nav.querySelector('[aria-current="location"]') || nav.querySelector(`a[href="#${CSS.escape(active)}"]`);
+    if (!link) return;
+    const top = link.getBoundingClientRect().top - nav.getBoundingClientRect().top + nav.scrollTop;
+    nav.scrollTo({ top: Math.max(0, top - nav.clientHeight / 3), behavior: "smooth" });
+  }, [active, live]);
 
   const go = (e, id) => {
     const el = document.getElementById(id);
@@ -209,7 +222,11 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
   const where = inRecipe ? "Recipe" : section?.kind === "faq" ? "FAQ" : numbered ? `${section?.number || 1} of ${numbered}` : "";
   const order = headings.findIndex((h) => h.id === active);
   return (
-    <nav aria-label="In this post" className="sticky top-28 hidden max-h-[calc(100vh-9rem)] overflow-y-auto pb-2 pr-2 lg:block">
+    <nav
+      ref={navRef}
+      aria-label="In this post"
+      className="sticky top-28 hidden max-h-[calc(100vh-9rem)] overflow-y-auto pb-2 pr-2 lg:block"
+    >
       <div className="sticker rounded-[1.5rem] bg-paper p-4">
         <div className="flex items-center justify-between gap-2 px-1 pb-3">
           <p className="flex items-center gap-2 whitespace-nowrap font-display text-lg tracking-wide">
