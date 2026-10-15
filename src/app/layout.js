@@ -35,6 +35,9 @@ export const metadata = {
     type: "website",
   },
   twitter: { card: "summary_large_image", title: SITE.name, description: SITE.description },
+  // Claiming cocoscare.com in Pinterest (Settings > Claimed accounts) gives a
+  // p:domain_verify code; set it as PINTEREST_DOMAIN_VERIFY on Netlify.
+  ...(process.env.PINTEREST_DOMAIN_VERIFY && { other: { "p:domain_verify": process.env.PINTEREST_DOMAIN_VERIFY } }),
 };
 
 export const viewport = { themeColor: "#ff0f9a" };

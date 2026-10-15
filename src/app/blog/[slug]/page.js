@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import EmailSignup from "@/components/EmailSignup";
 import FaqBlock from "@/components/FaqBlock";
 import ReadingProgress from "@/components/ReadingProgress";
 import TableOfContents from "@/components/TableOfContents";
 import RecipeCard from "@/components/RecipeCard";
-import RecipeJump from "@/components/RecipeJump";
+import RecipeJump, { JumpLink } from "@/components/RecipeJump";
 import { ProductEmbed } from "@/components/Cards";
 import { CategoryIcon, Heart } from "@/components/Doodles";
 import { COLOR, SITE, categoryFor } from "@/lib/content";
 import { getPost, getPostSlugs, readingMinutes } from "@/lib/data";
 import { bodySegments, faqSchema } from "@/lib/postBody";
 import { withHeadingIds } from "@/lib/postHeadings";
+import { mailchimpConfigured } from "@/lib/mailchimp";
 import { recipeSchema } from "@/lib/recipe";
 
 export const revalidate = 60;
@@ -80,10 +82,11 @@ export default async function PostPage({ params }) {
   const date = post.published_at
     ? new Date(post.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null;
-  const pinImage = recipe?.image_url || post.cover_url;
-  const pinUrl = pinImage
-    ? `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({ url, media: pinImage, description: post.title })}`
-    : null;
+  // Every Save goes out with the post's tall pin image (./pin) and a
+  // description longer than the title, which is what Pinterest searches.
+  const pinImage = `${url}/pin`;
+  const pinDescription = [post.title, post.excerpt].filter(Boolean).join(" | ").slice(0, 480);
+  const pinUrl = `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({ url, media: pinImage, description: pinDescription })}`;
 
   return (
     <article id="post">
@@ -122,14 +125,24 @@ export default async function PostPage({ params }) {
             By Coco{date ? ` · ${date}` : ""} · {readingMinutes(body, { html: isHtml })} min read
           </p>
           {jumps.length === 1 && (
-            <a
+            <JumpLink
               href="#recipe"
               className={`lift mt-6 inline-block rounded-full border-[3px] border-ink bg-ink px-6 py-3 font-display text-lg tracking-wide text-paper ${jumpShadow}`}
             >
               Jump to recipe ↓
-            </a>
+            </JumpLink>
           )}
           {jumps.length > 1 && <RecipeJump jumps={jumps} shadow={jumpShadow} />}
+          <div>
+            <a
+              href={pinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="follow-theme sticker-sm mt-5 inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2 font-display tracking-wide text-ink"
+            >
+              <Heart className="h-5 w-5" /> Save to Pinterest
+            </a>
+          </div>
         </div>
       </header>
 
@@ -143,6 +156,9 @@ export default async function PostPage({ params }) {
             <img
               src={post.cover_url}
               alt=""
+              data-pin-media={pinImage}
+              data-pin-description={pinDescription}
+              data-pin-url={url}
               className="sticker mb-10 aspect-[4/3] w-full rotate-[-1deg] rounded-[2rem] object-cover"
             />
           )}
@@ -184,7 +200,8 @@ export default async function PostPage({ params }) {
         </div>
       )}
 
-      <div className="mx-auto max-w-3xl px-5 pb-20">
+      <div className="mx-auto max-w-3xl space-y-8 px-5 pb-20">
+        {mailchimpConfigured && <EmailSignup source={post.category || "blog-post"} />}
         <div className="sticker flex flex-col items-center gap-3 rounded-[2rem] bg-blush p-6 text-center sm:flex-row sm:text-left">
           <Heart className="h-10 w-10 shrink-0 animate-wiggle" />
           <p className="flex-1 text-lg font-medium">Thanks for reading! Pin it for later, and come back for more.</p>
