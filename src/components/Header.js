@@ -220,7 +220,7 @@ function PhoneMenu({ pathname, onClose }) {
                   href={item.href}
                   onClick={onClose}
                   aria-current={active ? "page" : undefined}
-                  className={`sticker lift flex items-center justify-between rounded-[2rem] px-6 py-4 ${item.color === "pink" ? "bg-paper" : COLOR[item.color].bg}`}
+                  className={`sticker lift flex items-center text-ink justify-between rounded-[2rem] px-6 py-4 ${item.color === "pink" ? "bg-paper" : COLOR[item.color].bg}`}
                 >
                   <span className="font-display text-4xl tracking-wide">{item.label}</span>
                   <span className="grid h-10 w-10 place-items-center rounded-full border-[2.5px] border-ink bg-paper text-xl">
