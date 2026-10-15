@@ -92,9 +92,11 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
 
   const links = (onPick) =>
     rows.map((h) => {
+      // Close the phone menu first: closing it moves the page up, so
+      // measuring before that would land past the heading.
       const pick = (e) => {
-        go(e, h.id);
         onPick?.(e);
+        go(e, h.id);
       };
       if (h.level === 3) {
         // On the sidebar a section's subheadings fold away until you're in it.
@@ -164,8 +166,8 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
                 <a
                   href={`#${h.id}`}
                   onClick={(e) => {
-                    go(e, h.id);
                     onPick?.(e);
+                    go(e, h.id);
                   }}
                   aria-current={on ? "location" : undefined}
                   className={`block rounded-xl border-2 px-3 py-1.5 font-display leading-tight tracking-wide transition-all ${
