@@ -1,6 +1,7 @@
 import { publicClient } from "@/lib/supabase";
 import { SAMPLE_PICKS, SAMPLE_POSTS } from "@/lib/content";
 import { getWordpressPost, getWordpressPosts, stripTags, wordpressConfigured } from "@/lib/wordpress";
+import { withTaggedUrl } from "@/lib/amazon";
 
 // Reads published content: posts written in /admin and recipes and picks
 // from Coco's Supabase project, plus live posts sent from Handoff Hero to
@@ -85,7 +86,7 @@ export async function getProducts({ limit = 200, featured } = {}) {
     console.error("getProducts failed", error.message);
     return { products: SAMPLES.products.slice(0, limit), sample: true };
   }
-  return { products: data, sample: false };
+  return { products: data.map(withTaggedUrl), sample: false };
 }
 
 // Cards in a post body: {{product:link-name}} and {{recipe:link-name}},
@@ -119,7 +120,7 @@ async function productsFor(db, body) {
     .select("slug, name, note, image_url, url, price_label, section, color")
     .eq("status", "published")
     .in("slug", slugs);
-  return data || [];
+  return (data || []).map(withTaggedUrl);
 }
 
 // Recipes still in draft don't come back (RLS), so they aren't shown.
