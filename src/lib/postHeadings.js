@@ -4,7 +4,7 @@ import { stripTags } from "@/lib/wordpress";
 // table of contents, with the FAQ and recipe cards as entries where they
 // sit. Ids come from the heading text, so links to a section stay put.
 export function withHeadingIds(segments, { endRecipe = null } = {}) {
-  const used = new Set(["faq", "recipe"]);
+  const used = new Set(["faq", ...segments.map((s) => s.anchorId).filter(Boolean), endRecipe?.id].filter(Boolean));
   const headings = [];
   const idFor = (text) => {
     const base =
@@ -23,8 +23,8 @@ export function withHeadingIds(segments, { endRecipe = null } = {}) {
       headings.push({ id: "faq", text: s.title || "FAQ", level: 2, kind: "faq" });
       return s;
     }
-    if (s.type === "recipe" && s.anchor) {
-      headings.push({ id: "recipe", text: s.recipe.title, level: 2, kind: "recipe" });
+    if (s.type === "recipe" && s.anchorId) {
+      headings.push({ id: s.anchorId, text: s.recipe.title, level: 2, kind: "recipe" });
       return s;
     }
     if (s.type !== "html") return s;
@@ -39,7 +39,7 @@ export function withHeadingIds(segments, { endRecipe = null } = {}) {
     });
     return { ...s, html };
   });
-  if (endRecipe) headings.push({ id: "recipe", text: endRecipe.title, level: 2, kind: "recipe" });
+  if (endRecipe) headings.push({ id: endRecipe.id, text: endRecipe.recipe.title, level: 2, kind: "recipe" });
   // Each heading's main section, and a running number for the main ones
   // (the FAQ and recipe get icons instead).
   let number = 0;

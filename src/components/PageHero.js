@@ -3,12 +3,12 @@
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { Bubble, Heart, Sparkle, Star } from "@/components/Doodles";
 
-// Deep shades so the white title and text pass WCAG AA (see globals.css).
+// White text on hot pink (WCAG AA, see globals.css); ink on the pastels.
 const BG = {
-  pink: "bg-pink-hero",
-  butter: "bg-butter-hero",
-  periwinkle: "bg-periwinkle-hero",
-  mint: "bg-mint-hero",
+  pink: "bg-pink-hero text-paper",
+  butter: "bg-butter",
+  periwinkle: "bg-periwinkle",
+  mint: "bg-mint",
 };
 
 // Title band for inner pages: the title sinks slowly while the doodles
@@ -23,10 +23,10 @@ export default function PageHero({ eyebrow, title, children, color = "pink" }) {
   const style = (v) => (reduce ? undefined : v);
 
   return (
-    <section className={`relative overflow-hidden border-b-[3px] border-ink pb-20 pt-36 sm:pt-40 ${BG[color]} text-paper`}>
-      <div className="dots absolute inset-0" aria-hidden="true" />
+    <section className={`relative overflow-hidden border-b-[3px] border-ink pb-20 pt-36 sm:pt-40 ${BG[color]}`}>
+      <div className={color === "pink" ? "dots absolute inset-0" : "dots-ink absolute inset-0"} aria-hidden="true" />
       <motion.div style={style({ y: fastY, rotate: spin })} className="absolute left-[7%] top-32">
-        <Star className="h-12 w-12 sm:h-16 sm:w-16" fill={color === "butter" ? "var(--paper)" : "var(--butter)"} />
+        <Star className="h-12 w-12 sm:h-16 sm:w-16" />
       </motion.div>
       <motion.div style={style({ y: slowY })} className="absolute right-[9%] top-40">
         <Heart className="h-12 w-12 animate-wiggle sm:h-16 sm:w-16" fill={color === "pink" ? "var(--paper)" : "var(--pink)"} />
@@ -35,7 +35,7 @@ export default function PageHero({ eyebrow, title, children, color = "pink" }) {
         <Bubble className="h-8 w-8" />
       </motion.div>
       <motion.div style={style({ y: slowY, rotate: spin })} className="absolute bottom-10 right-[24%]">
-        <Sparkle className="h-9 w-9" fill={color === "butter" ? "var(--paper)" : "var(--butter)"} />
+        <Sparkle className="h-9 w-9" fill="var(--butter)" />
       </motion.div>
 
       <motion.div style={style({ y: titleY })} className="relative mx-auto max-w-3xl px-5 text-center">
@@ -53,7 +53,7 @@ export default function PageHero({ eyebrow, title, children, color = "pink" }) {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 220, damping: 14, delay: 0.08 }}
-          className={`mt-4 font-display text-6xl leading-none tracking-wide sm:text-7xl text-outline`}
+          className={`mt-4 font-display text-6xl leading-none tracking-wide sm:text-7xl ${color === "pink" ? "text-outline" : ""}`}
         >
           {title}
         </motion.h1>
