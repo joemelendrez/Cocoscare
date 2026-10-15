@@ -24,10 +24,10 @@ export const NAV = [
 
 // Tailwind needs full class names written out, so colors map here.
 export const COLOR = {
-  pink: { bg: "bg-pink", soft: "bg-pink-soft", text: "text-pink" },
-  butter: { bg: "bg-butter", soft: "bg-butter/30", text: "text-butter" },
-  periwinkle: { bg: "bg-periwinkle", soft: "bg-periwinkle/25", text: "text-periwinkle" },
-  mint: { bg: "bg-mint", soft: "bg-mint/30", text: "text-mint" },
+  pink: { bg: "bg-pink", hero: "bg-pink-hero", soft: "bg-pink-soft", text: "text-pink" },
+  butter: { bg: "bg-butter", hero: "bg-butter-hero", soft: "bg-butter/30", text: "text-butter" },
+  periwinkle: { bg: "bg-periwinkle", hero: "bg-periwinkle-hero", soft: "bg-periwinkle/25", text: "text-periwinkle" },
+  mint: { bg: "bg-mint", hero: "bg-mint-hero", soft: "bg-mint/30", text: "text-mint" },
 };
 
 export const CATEGORIES = [
@@ -122,11 +122,29 @@ export const SHOP_SECTIONS = [
 // `url` stays null until Coco adds her affiliate link; the card then shows
 // "Link coming soon" instead of a dead button.
 export const SAMPLE_PICKS = [
-  { name: "Floor seat with tray", section: "baby", note: "Bought it for a nanny family, then for us.", color: "periwinkle", url: null },
-  { name: "Silicone suction plates", section: "toddler", note: "The only plates that survived the throw phase.", color: "mint", url: null },
+  {
+    name: "Floor seat with tray",
+    section: "baby",
+    note: "Bought it for a nanny family, then for us.",
+    color: "periwinkle",
+    url: null,
+  },
+  {
+    name: "Silicone suction plates",
+    section: "toddler",
+    note: "The only plates that survived the throw phase.",
+    color: "mint",
+    url: null,
+  },
   { name: "Mini muffin tin", section: "kitchen", note: "Toddler-sized everything. Used weekly.", color: "butter", url: null },
   { name: "Ribbed crop tee", section: "mom", note: "Soft, cute, hides spit-up. Have it in 4 colors.", color: "pink", url: null },
-  { name: "Backpack diaper bag", section: "outings", note: "Hands free, wipeable, a pocket for everything.", color: "periwinkle", url: null },
+  {
+    name: "Backpack diaper bag",
+    section: "outings",
+    note: "Hands free, wipeable, a pocket for everything.",
+    color: "periwinkle",
+    url: null,
+  },
   { name: "Snack spinner cups", section: "toddler", note: "Fewer crushed crackers in the car seat.", color: "butter", url: null },
   { name: "Swaddle blankets", section: "baby", note: "Burp cloth, nursing cover, stroller shade.", color: "mint", url: null },
   { name: "Joggers with pockets", section: "mom", note: "Phone, keys, pacifier. Real pockets.", color: "pink", url: null },

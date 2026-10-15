@@ -95,24 +95,24 @@ export default async function PostPage({ params }) {
       {recipe && <JsonLd item={recipeSchema(recipe, { url, author: "Coco", published: post.published_at })} />}
 
       <header
-        className={`dots-ink relative overflow-hidden border-b-[3px] border-ink pb-14 pt-32 sm:pt-36 ${COLOR[cat.color].bg}`}
+        className={`dots relative overflow-hidden border-b-[3px] border-ink pb-14 pt-32 text-paper sm:pt-36 ${COLOR[cat.color].hero}`}
       >
         <div className="relative mx-auto max-w-3xl px-5 text-center">
           <Link
             href="/blog"
-            className="sticker-sm inline-flex -rotate-2 items-center gap-2 rounded-full bg-paper px-4 py-1 font-display tracking-wide"
+            className="sticker-sm inline-flex -rotate-2 items-center gap-2 rounded-full bg-paper px-4 py-1 font-display tracking-wide text-ink"
           >
             <CategoryIcon name={cat.icon} className="h-5 w-5" /> {cat.label}
           </Link>
-          <h1 className="mt-5 font-display text-4xl leading-[1.05] tracking-wide sm:text-6xl">{post.title}</h1>
-          {post.excerpt && <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-ink/80">{post.excerpt}</p>}
-          <p className="mt-4 text-sm font-semibold text-ink/70">
+          <h1 className="text-outline mt-5 font-display text-4xl leading-[1.05] tracking-wide sm:text-6xl">{post.title}</h1>
+          {post.excerpt && <p className="mx-auto mt-4 max-w-2xl text-lg font-medium">{post.excerpt}</p>}
+          <p className="mt-4 text-sm font-semibold">
             By Coco{date ? ` · ${date}` : ""} · {readingMinutes(body, { html: isHtml })} min read
           </p>
           {recipe && (
             <a
               href="#recipe"
-              className="lift mt-6 inline-block rounded-full border-[3px] border-ink bg-ink px-6 py-3 font-display text-lg tracking-wide text-paper shadow-[5px_5px_0_var(--pink)]"
+              className="lift mt-6 inline-block rounded-full border-[3px] border-ink bg-ink px-6 py-3 font-display text-lg tracking-wide text-paper shadow-[5px_5px_0_var(--butter)]"
             >
               Jump to recipe ↓
             </a>
