@@ -177,6 +177,7 @@ export default function AdminPosts() {
       intro="Write a new post in Handoff Hero and send it here as a draft. Then finish it here: add photos, product cards and a recipe, and mark it ready for review or put it live."
       newHref={HANDOFF_HERO_NEW_POST}
       newExternal
+      rowHref="/admin/posts"
       newLabel="New post"
       altHref="/admin/posts/new"
       altLabel="or start a blank one here"

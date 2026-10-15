@@ -7,11 +7,13 @@ import { Notice, Segmented, StatusPill } from "@/components/admin/AdminUI";
 
 // One list screen for posts, recipes and products: filter by status, tap a
 // row to edit, "New" to start one (left out when there's no newLabel).
-// `action(row)` adds a button beside each row (outside its link).
+// `action(row)` adds a button beside each row (outside its link). Rows open
+// `${rowHref}/${id}`; rowHref defaults to newHref without its "/new".
 export default function AdminList({
   table,
   title,
   newHref,
+  rowHref,
   newLabel,
   newExternal,
   altHref,
@@ -104,7 +106,7 @@ export default function AdminList({
           {shown.map((row) => (
             <li key={row.id} className="flex items-center gap-2">
               <Link
-                href={`${newHref.replace(/\/new$/, "")}/${row.id}`}
+                href={`${rowHref || newHref.replace(/\/new$/, "")}/${row.id}`}
                 className="flex min-w-0 flex-1 items-center gap-4 rounded-[1.5rem] border-[3px] border-ink bg-paper p-3 pr-5 transition-transform hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--ink)]"
               >
                 {render(row)}
