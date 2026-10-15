@@ -5,7 +5,7 @@ import FaqBlock from "@/components/FaqBlock";
 import ReadingProgress from "@/components/ReadingProgress";
 import TableOfContents from "@/components/TableOfContents";
 import RecipeCard from "@/components/RecipeCard";
-import RecipeJump from "@/components/RecipeJump";
+import RecipeJump, { JumpLink } from "@/components/RecipeJump";
 import { ProductEmbed } from "@/components/Cards";
 import { CategoryIcon, Heart } from "@/components/Doodles";
 import { COLOR, SITE, categoryFor } from "@/lib/content";
@@ -125,12 +125,12 @@ export default async function PostPage({ params }) {
             By Coco{date ? ` · ${date}` : ""} · {readingMinutes(body, { html: isHtml })} min read
           </p>
           {jumps.length === 1 && (
-            <a
+            <JumpLink
               href="#recipe"
               className={`lift mt-6 inline-block rounded-full border-[3px] border-ink bg-ink px-6 py-3 font-display text-lg tracking-wide text-paper ${jumpShadow}`}
             >
               Jump to recipe ↓
-            </a>
+            </JumpLink>
           )}
           {jumps.length > 1 && <RecipeJump jumps={jumps} shadow={jumpShadow} />}
           <div>

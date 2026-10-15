@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Cookie, Heart } from "@/components/Doodles";
+import { jumpTo } from "@/lib/jumpTo";
 
 const BADGE_COLORS = ["bg-pink-soft", "bg-butter", "bg-periwinkle", "bg-mint"];
 
@@ -65,10 +66,7 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
     const el = document.getElementById(id);
     if (!el) return;
     e.preventDefault();
-    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 112, behavior: "smooth" });
-    history.replaceState(null, "", `#${id}`);
-    // replaceState doesn't fire hashchange; recipe cards listen for it to open.
-    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    jumpTo(el);
   };
 
   if (headings.length < 2) return null;

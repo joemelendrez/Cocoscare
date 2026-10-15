@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Cookie } from "@/components/Doodles";
+import { onJumpClick } from "@/lib/jumpTo";
 
 // The hero's "Jump to a recipe" when a post has two or more recipe cards:
 // one button that opens a sticker menu of every recipe, instead of a row
@@ -52,7 +53,10 @@ export default function RecipeJump({ jumps, shadow }) {
                 <a
                   role="menuitem"
                   href={`#${j.id}`}
-                  onClick={() => setOpen(false)}
+                  onClick={(e) => {
+                    setOpen(false);
+                    onJumpClick(e);
+                  }}
                   className="flex items-center gap-3 rounded-[1rem] px-3 py-2.5 font-display text-lg leading-tight tracking-wide text-ink hover:bg-blush"
                 >
                   <Cookie className="h-7 w-7 shrink-0" />
@@ -64,5 +68,14 @@ export default function RecipeJump({ jumps, shadow }) {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// The hero's single "Jump to recipe" link: same settling scroll as the menu.
+export function JumpLink({ href, className, children }) {
+  return (
+    <a href={href} onClick={onJumpClick} className={className}>
+      {children}
+    </a>
   );
 }
