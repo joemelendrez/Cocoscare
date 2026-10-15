@@ -6,5 +6,10 @@ export const metadata = {
 };
 
 export default function AdminLayout({ children }) {
-  return <AdminShell>{children}</AdminShell>;
+  // Admin stays in light mode whatever the site theme is.
+  return (
+    <div data-theme="light" className="min-h-screen bg-paper text-ink">
+      <AdminShell>{children}</AdminShell>
+    </div>
+  );
 }

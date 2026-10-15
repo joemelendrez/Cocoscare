@@ -44,7 +44,6 @@ export default function Hero() {
   const reduce = useReducedMotion();
   const { scrollY } = useScroll();
   const smoothY = useSpring(scrollY, { stiffness: 140, damping: 28, mass: 0.3 });
-  const textY = useTransform(smoothY, [0, 700], [0, 120]);
   const logoY = useTransform(smoothY, [0, 700], [0, -90]);
   const logoR = useTransform(smoothY, [0, 700], [0, -8]);
   const wordX = useTransform(smoothY, [0, 700], [0, -220]);
@@ -61,10 +60,7 @@ export default function Hero() {
   };
 
   return (
-    <section
-      onPointerMove={onPointerMove}
-      className="dots-ink relative overflow-hidden bg-blush pb-28 pt-32 sm:pt-36 lg:pb-36"
-    >
+    <section onPointerMove={onPointerMove} className="dots-ink relative overflow-hidden bg-blush pb-28 pt-32 sm:pt-36 lg:pb-36">
       {/* Giant outlined word drifting sideways behind everything. */}
       <motion.p
         aria-hidden="true"
@@ -75,7 +71,9 @@ export default function Hero() {
       </motion.p>
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 lg:grid-cols-[1.1fr_1fr]">
-        <motion.div style={reduce ? undefined : { y: textY }} className="relative z-10 text-center lg:text-left">
+        {/* The words and buttons scroll with the page (no sinking parallax),
+            so "Read the blog" and "Shop my faves" move up as you scroll. */}
+        <div className="relative z-10 text-center lg:text-left">
           <motion.span
             {...pop(0.05)}
             className="sticker-sm inline-flex -rotate-2 items-center gap-2 rounded-full bg-butter px-4 py-1.5 font-display text-base tracking-wide"
@@ -88,8 +86,8 @@ export default function Hero() {
           >
             Mom life,
             <br />
-            made a little{" "}
-            <span className="relative inline-block">
+            made a little {/* Keeps the white-on-pink look in dark mode too. */}
+            <span data-theme="light" className="relative inline-block">
               <motion.span
                 aria-hidden="true"
                 className="absolute inset-x-[-0.15em] bottom-[0.06em] top-[0.32em] -z-10 -rotate-2 rounded-2xl border-[3px] border-ink bg-pink"
@@ -102,8 +100,8 @@ export default function Hero() {
             </span>
           </motion.h1>
           <motion.p {...pop(0.25)} className="mx-auto mt-6 max-w-lg text-lg font-medium text-ink/80 sm:text-xl lg:mx-0">
-            The recipes, baby and toddler finds, and family outings I trust after 10+ years of
-            caring for other people&rsquo;s kids, and now my own.
+            The recipes, baby and toddler finds, and family outings I trust after 10+ years of caring for other people&rsquo;s
+            kids, and now my own.
           </motion.p>
           <motion.div {...pop(0.35)} className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
             <Link href="/blog" className="sticker lift rounded-full bg-paper px-7 py-3.5 font-display text-xl tracking-wide">
@@ -116,7 +114,7 @@ export default function Hero() {
               Shop my faves
             </Link>
           </motion.div>
-        </motion.div>
+        </div>
 
         <div className="relative mx-auto aspect-square w-full max-w-[26rem] lg:max-w-[30rem]">
           <motion.div style={reduce ? undefined : { y: logoY, rotate: logoR }} className="absolute inset-[6%]">
