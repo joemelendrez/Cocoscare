@@ -82,7 +82,10 @@ function useStepTimers(steps) {
     });
   };
   const pause = (i) =>
-    setTimers((prev) => ({ ...prev, [i]: { endsAt: null, left: Math.max(0, (prev[i].endsAt - Date.now()) / 1000), done: false } }));
+    setTimers((prev) => ({
+      ...prev,
+      [i]: { endsAt: null, left: Math.max(0, (prev[i].endsAt - Date.now()) / 1000), done: false },
+    }));
   const reset = (i) =>
     setTimers((prev) => {
       const next = { ...prev };
@@ -128,8 +131,8 @@ function useWakeLock() {
   return { supported, on, toggle: () => setOn((v) => !v) };
 }
 
-// `anchor` gives the card the #recipe id "Jump to recipe" scrolls to; only
-// one card on a page should have it.
+// `anchor` is the card's id for "Jump to recipe" (true = "recipe"); a post
+// with several recipes gives each its own (recipe, recipe-2, ...).
 export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
   const steps = recipe.steps || [];
   const ingredients = recipe.ingredients || [];
@@ -151,7 +154,11 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
     });
 
   return (
-    <section id={anchor ? "recipe" : undefined} aria-label={`Recipe: ${recipe.title}`} className="recipe-card sticker scroll-mt-28 overflow-hidden rounded-[2rem] bg-paper">
+    <section
+      id={anchor === true ? "recipe" : anchor || undefined}
+      aria-label={`Recipe: ${recipe.title}`}
+      className="recipe-card sticker scroll-mt-28 overflow-hidden rounded-[2rem] bg-paper"
+    >
       <div className="dots relative border-b-[3px] border-ink bg-pink p-6 text-paper sm:p-8">
         <span className="sticker-sm inline-flex -rotate-2 items-center gap-1.5 rounded-full bg-butter px-3 py-1 font-display tracking-wide text-ink">
           <Sparkle className="h-4 w-4" fill="var(--paper)" /> Recipe card
@@ -164,11 +171,20 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
           <Stat label="Total" value={formatMinutes(total)} />
         </div>
         <div className="no-print mt-5 flex flex-wrap gap-2">
-          <button type="button" onClick={() => window.print()} className="rounded-full border-[2.5px] border-ink bg-paper px-4 py-1.5 font-display tracking-wide text-ink">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-full border-[2.5px] border-ink bg-paper px-4 py-1.5 font-display tracking-wide text-ink"
+          >
             Print
           </button>
           {pinUrl && (
-            <a href={pinUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border-[2.5px] border-ink bg-ink px-4 py-1.5 font-display tracking-wide text-paper">
+            <a
+              href={pinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full border-[2.5px] border-ink bg-ink px-4 py-1.5 font-display tracking-wide text-paper"
+            >
               Pin it
             </a>
           )}
@@ -190,13 +206,23 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
           <div className="flex items-center justify-between gap-3">
             <h3 className="font-display text-2xl tracking-wide">Ingredients</h3>
             <div className="no-print flex items-center gap-1.5 rounded-full border-[2.5px] border-ink p-1">
-              <button type="button" aria-label="Fewer servings" onClick={() => setServings((s) => Math.max(1, s - 1))} className="grid h-8 w-8 place-items-center rounded-full bg-blush font-display text-xl">
+              <button
+                type="button"
+                aria-label="Fewer servings"
+                onClick={() => setServings((s) => Math.max(1, s - 1))}
+                className="grid h-8 w-8 place-items-center rounded-full bg-blush font-display text-xl"
+              >
                 −
               </button>
               <span className="min-w-20 text-center text-sm font-semibold" aria-live="polite">
                 {servings} serving{servings === 1 ? "" : "s"}
               </span>
-              <button type="button" aria-label="More servings" onClick={() => setServings((s) => Math.min(99, s + 1))} className="grid h-8 w-8 place-items-center rounded-full bg-blush font-display text-xl">
+              <button
+                type="button"
+                aria-label="More servings"
+                onClick={() => setServings((s) => Math.min(99, s + 1))}
+                className="grid h-8 w-8 place-items-center rounded-full bg-blush font-display text-xl"
+              >
                 +
               </button>
             </div>
@@ -206,9 +232,13 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
               const checked = have.has(i);
               return (
                 <li key={i}>
-                  <label className={`flex cursor-pointer items-start gap-3 rounded-2xl px-2 py-1.5 transition-colors hover:bg-blush ${checked ? "text-ink/45 line-through" : ""}`}>
+                  <label
+                    className={`flex cursor-pointer items-start gap-3 rounded-2xl px-2 py-1.5 transition-colors hover:bg-blush ${checked ? "text-ink/45 line-through" : ""}`}
+                  >
                     <input type="checkbox" checked={checked} onChange={() => toggle(setHave, i)} className="peer sr-only" />
-                    <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-[2.5px] border-ink transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-pink ${checked ? "bg-mint" : "bg-paper"}`}>
+                    <span
+                      className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-[2.5px] border-ink transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-pink ${checked ? "bg-mint" : "bg-paper"}`}
+                    >
                       {checked && <span className="text-sm font-bold">✓</span>}
                     </span>
                     <span>
@@ -232,7 +262,10 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
               const left = step.timer_seconds ? leftFor(i) : 0;
               const progress = step.timer_seconds ? 1 - left / step.timer_seconds : 0;
               return (
-                <li key={i} className={`rounded-[1.5rem] border-[2.5px] border-ink p-4 transition-colors ${done ? "bg-mint/40" : "bg-paper"}`}>
+                <li
+                  key={i}
+                  className={`rounded-[1.5rem] border-[2.5px] border-ink p-4 transition-colors ${done ? "bg-mint/40" : "bg-paper"}`}
+                >
                   <div className="flex items-start gap-3">
                     <button
                       type="button"
@@ -248,22 +281,41 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
                   {step.timer_seconds > 0 && (
                     <div className="no-print mt-3 flex flex-wrap items-center gap-2 pl-12">
                       <div className="relative h-10 min-w-28 overflow-hidden rounded-full border-[2.5px] border-ink bg-blush">
-                        <motion.div className="absolute inset-y-0 left-0 bg-pink" animate={{ width: `${Math.min(100, progress * 100)}%` }} transition={{ ease: "linear", duration: 0.25 }} />
-                        <span className={`relative grid h-full place-items-center px-4 font-display text-lg tabular-nums tracking-wide ${progress > 0.5 ? "text-paper" : ""}`} aria-live="off">
+                        <motion.div
+                          className="absolute inset-y-0 left-0 bg-pink"
+                          animate={{ width: `${Math.min(100, progress * 100)}%` }}
+                          transition={{ ease: "linear", duration: 0.25 }}
+                        />
+                        <span
+                          className={`relative grid h-full place-items-center px-4 font-display text-lg tabular-nums tracking-wide ${progress > 0.5 ? "text-paper" : ""}`}
+                          aria-live="off"
+                        >
                           {formatClock(left)}
                         </span>
                       </div>
                       {t?.endsAt ? (
-                        <button type="button" onClick={() => pause(i)} className="rounded-full border-[2.5px] border-ink bg-butter px-4 py-1.5 font-display tracking-wide">
+                        <button
+                          type="button"
+                          onClick={() => pause(i)}
+                          className="rounded-full border-[2.5px] border-ink bg-butter px-4 py-1.5 font-display tracking-wide"
+                        >
                           Pause
                         </button>
                       ) : (
-                        <button type="button" onClick={() => start(i)} className="rounded-full border-[2.5px] border-ink bg-ink px-4 py-1.5 font-display tracking-wide text-paper">
+                        <button
+                          type="button"
+                          onClick={() => start(i)}
+                          className="rounded-full border-[2.5px] border-ink bg-ink px-4 py-1.5 font-display tracking-wide text-paper"
+                        >
                           {t?.done ? "Again" : t ? "Resume" : "Start timer"}
                         </button>
                       )}
                       {t && (
-                        <button type="button" onClick={() => reset(i)} className="rounded-full px-3 py-1.5 font-semibold text-ink/60 underline-offset-2 hover:underline">
+                        <button
+                          type="button"
+                          onClick={() => reset(i)}
+                          className="rounded-full px-3 py-1.5 font-semibold text-ink/60 underline-offset-2 hover:underline"
+                        >
                           Reset
                         </button>
                       )}

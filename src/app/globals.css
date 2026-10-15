@@ -13,12 +13,8 @@
   --periwinkle: #7d93e8;
   --butter: #ffcb47;
   --mint: #73dfbf;
-  /* Deeper versions for hero bands with white text: each is at least
-     5.4:1 against white (WCAG AA for all text sizes). */
+  /* Hot pink for pink hero bands with white text (5.9:1, WCAG AA). */
   --pink-hero: #c2007a;
-  --butter-hero: #a65400;
-  --periwinkle-hero: #3f5bd6;
-  --mint-hero: #14775a;
 }
 
 @theme inline {
@@ -32,9 +28,6 @@
   --color-butter: var(--butter);
   --color-mint: var(--mint);
   --color-pink-hero: var(--pink-hero);
-  --color-butter-hero: var(--butter-hero);
-  --color-periwinkle-hero: var(--periwinkle-hero);
-  --color-mint-hero: var(--mint-hero);
   --font-sans: var(--font-fredoka);
   --font-display: var(--font-lilita);
 }
