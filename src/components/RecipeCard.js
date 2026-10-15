@@ -28,6 +28,16 @@ function chime() {
   navigator.vibrate?.([200, 100, 200]);
 }
 
+// "Ready at 9:45 PM" while a long wait runs, else how long it is ("2 hr").
+function longLabel(t, left, total) {
+  if (t?.endsAt) {
+    const at = new Date(t.endsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return `Ready at ${at}`;
+  }
+  if (t?.done) return "Done";
+  return formatMinutes(Math.ceil((t ? left : total) / 60)) + (t ? " left" : "");
+}
+
 function Stat({ label, value }) {
   if (!value) return null;
   return (
@@ -38,16 +48,56 @@ function Stat({ label, value }) {
   );
 }
 
+// Waits this long or more ("freeze 2 hours") show the clock time they'll
+// be ready at instead of a ticking countdown, since nobody watches a page
+// for two hours.
+const LONG_WAIT = 60 * 60;
+
 // timers: { [stepIndex]: { endsAt: number|null, left: seconds, done: bool } }
-function useStepTimers(steps) {
+// Running timers are kept on the device (per recipe), so closing the page
+// or locking the phone mid-wait doesn't lose them.
+function useStepTimers(steps, storeKey) {
   const [timers, setTimers] = useState({});
   const [now, setNow] = useState(0);
   const running = Object.values(timers).some((t) => t.endsAt);
+  const loaded = useRef(false);
 
   const timersRef = useRef(timers);
   useEffect(() => {
     timersRef.current = timers;
   }, [timers]);
+
+  useEffect(() => {
+    if (!storeKey) return;
+    const frame = requestAnimationFrame(() => {
+      loaded.current = true;
+      try {
+        const saved = JSON.parse(localStorage.getItem(storeKey) || "{}");
+        const t = Date.now();
+        const keep = {};
+        for (const [k, v] of Object.entries(saved)) {
+          if (!steps[k]?.timer_seconds) continue;
+          // A wait that ended while the page was closed shows as done.
+          keep[k] = v.endsAt && v.endsAt <= t ? { endsAt: null, left: 0, done: true } : v;
+        }
+        if (Object.keys(keep).length) {
+          setNow(t);
+          setTimers(keep);
+        }
+      } catch {}
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [storeKey, steps]);
+
+  useEffect(() => {
+    if (!storeKey || !loaded.current) return;
+    try {
+      // Finished timers aren't worth keeping past this visit.
+      const live = Object.fromEntries(Object.entries(timers).filter(([, v]) => !v.done));
+      if (Object.keys(live).length) localStorage.setItem(storeKey, JSON.stringify(live));
+      else localStorage.removeItem(storeKey);
+    } catch {}
+  }, [storeKey, timers]);
 
   useEffect(() => {
     if (!running) return;
@@ -140,7 +190,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
   const [servings, setServings] = useState(base);
   const [have, setHave] = useState(() => new Set());
   const [doneSteps, setDoneSteps] = useState(() => new Set());
-  const { timers, leftFor, start, pause, reset } = useStepTimers(steps);
+  const { timers, leftFor, start, pause, reset } = useStepTimers(steps, recipe.id ? `coco-timers:${recipe.id}` : null);
   const wake = useWakeLock();
   const id = anchor === true ? "recipe" : anchor || undefined;
   // Cards start closed to save scrolling; "Jump to recipe" (a #id link)
@@ -289,6 +339,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
               const t = timers[i];
               const left = step.timer_seconds ? leftFor(i) : 0;
               const progress = step.timer_seconds ? 1 - left / step.timer_seconds : 0;
+              const long = step.timer_seconds >= LONG_WAIT;
               return (
                 <li
                   key={i}
@@ -318,9 +369,12 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
                           className={`relative grid h-full place-items-center px-4 font-display text-lg tabular-nums tracking-wide ${progress > 0.5 ? "text-paper" : ""}`}
                           aria-live="off"
                         >
-                          {formatClock(left)}
+                          {long ? longLabel(t, left, step.timer_seconds) : formatClock(left)}
                         </span>
                       </div>
+                      {long && t?.endsAt && (
+                        <span className="text-sm font-semibold text-ink/70">{formatMinutes(Math.ceil(left / 60))} left</span>
+                      )}
                       {t?.endsAt ? (
                         <button
                           type="button"
