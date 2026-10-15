@@ -19,8 +19,7 @@
    plum, text and the sticker outlines/shadows go cream, and the pink tints
    darken. Pastel and hot pink panels keep the light palette inside them
    (dark ink text and outlines, white on pink), so they read exactly as in
-   light mode. Set by data-theme on <html> (see ThemeToggle); admin forces
-   light with data-theme="light". */
+   light mode. Set by data-theme on <html> (see ThemeToggle). */
 [data-theme="dark"] {
   --ink: #fbeef6;
   --paper: #1d1420;
@@ -44,6 +43,31 @@
    inherits the page color stays dark. */
 [data-theme="dark"] :is(.bg-butter, .bg-mint, .bg-periwinkle) {
   color: var(--ink);
+}
+
+/* White chips inside a pastel or pink panel keep the light palette, so in
+   dark mode they'd show cream text on white. Give them dark text... */
+[data-theme="dark"] .bg-pink .bg-paper:not(.follow-theme) {
+  color: var(--ink);
+}
+
+/* ...or let small chips (category tags, icon circles) go dark with the site,
+   keeping the dark outline the panels around them use. */
+[data-theme="dark"] .follow-theme {
+  --ink: #fbeef6;
+  --paper: #1d1420;
+  color: var(--ink);
+  border-color: #161016;
+}
+/* Dark bands (the pin wall, the scrolling ribbon) stay dark in dark mode
+   instead of flipping to cream: ink and paper swap back for them. */
+[data-theme="dark"] .ink-band {
+  --ink: #120c14;
+  --paper: #fbeef6;
+}
+
+[data-theme="dark"] .follow-theme.sticker-sm {
+  box-shadow: 3px 3px 0 #161016;
 }
 
 @theme inline {

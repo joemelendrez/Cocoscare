@@ -44,7 +44,7 @@ export default function PageHero({ eyebrow, title, children, color = "pink" }) {
             initial={{ opacity: 0, y: 20, rotate: -8 }}
             animate={{ opacity: 1, y: 0, rotate: -2 }}
             transition={{ type: "spring", stiffness: 260, damping: 16 }}
-            className="sticker-sm inline-block rounded-full bg-paper px-4 py-1 font-display text-base tracking-wide text-ink"
+            className="follow-theme sticker-sm inline-block rounded-full bg-paper px-4 py-1 font-display text-base tracking-wide text-ink"
           >
             {eyebrow}
           </motion.span>

@@ -21,7 +21,7 @@ export function SectionTitle({ eyebrow, title, accent, children, center = true }
 
 export function SampleBadge() {
   return (
-    <span className="rounded-full border-2 border-dashed border-ink/50 bg-paper/80 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-ink/60">
+    <span className="rounded-full border-2 follow-theme border-dashed border-ink/50 bg-paper/80 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-ink/60">
       Sample
     </span>
   );
@@ -46,11 +46,11 @@ export function PostCard({ post }) {
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <span className="grid h-20 w-20 place-items-center rounded-full border-[3px] border-ink bg-paper transition-transform duration-500 group-hover:rotate-[-12deg] group-hover:scale-110">
+          <span className="grid h-20 w-20 place-items-center rounded-full follow-theme border-[3px] border-ink bg-paper transition-transform duration-500 group-hover:rotate-[-12deg] group-hover:scale-110">
             <CategoryIcon name={cat.icon} className="h-12 w-12" />
           </span>
         )}
-        <span className="absolute left-4 top-4 rounded-full border-2 border-ink bg-paper px-3 py-0.5 text-sm font-semibold">
+        <span className="follow-theme absolute left-4 top-4 rounded-full border-2 border-ink bg-paper px-3 py-0.5 text-sm font-semibold">
           {cat.label}
         </span>
         {post.sample && (
@@ -187,7 +187,7 @@ export function CategoryCard({ cat }) {
       href="/blog"
       className={`sticker lift group relative flex h-full flex-col overflow-hidden rounded-[2rem] p-6 ${COLOR[cat.color].bg}`}
     >
-      <span className="grid h-16 w-16 place-items-center rounded-full border-[3px] border-ink bg-paper transition-transform duration-300 group-hover:rotate-[-15deg] group-hover:scale-110">
+      <span className="grid follow-theme h-16 w-16 place-items-center rounded-full border-[3px] border-ink bg-paper transition-transform duration-300 group-hover:rotate-[-15deg] group-hover:scale-110">
         <CategoryIcon name={cat.icon} className="h-10 w-10" />
       </span>
       <h3 className="mt-5 font-display text-3xl tracking-wide">{cat.label}</h3>

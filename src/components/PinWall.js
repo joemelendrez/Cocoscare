@@ -25,12 +25,18 @@ function Pin({ post, i }) {
           <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent" aria-hidden="true" />
         </>
       )}
-      <span className="relative grid h-14 w-14 place-items-center rounded-full border-[2.5px] border-ink bg-paper transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110">
+      <span className="follow-theme relative grid h-14 w-14 place-items-center rounded-full border-[2.5px] border-ink bg-paper transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110">
         <CategoryIcon name={cat.icon} className="h-9 w-9" />
       </span>
       <div className="relative">
-        <span className="rounded-full border-2 border-ink bg-paper px-3 py-0.5 text-sm font-semibold">{cat.label}</span>
-        <p className={`mt-3 font-display text-2xl leading-tight tracking-wide ${post.cover_url ? "text-paper text-outline" : ""}`}>{post.title}</p>
+        <span className="follow-theme rounded-full border-2 border-ink bg-paper px-3 py-0.5 text-sm font-semibold">
+          {cat.label}
+        </span>
+        <p
+          className={`mt-3 font-display text-2xl leading-tight tracking-wide ${post.cover_url ? "text-paper text-outline" : ""}`}
+        >
+          {post.title}
+        </p>
       </div>
       <span className="absolute right-4 top-4 rounded-full border-2 border-ink bg-pink px-3 py-1 font-display text-sm tracking-wide text-paper opacity-0 transition-opacity group-hover:opacity-100">
         Save
@@ -43,7 +49,7 @@ export default function PinWall({ posts }) {
   const columns = [[], [], []];
   posts.slice(0, 9).forEach((p, i) => columns[i % 3].push({ post: p, i }));
   return (
-    <section className="relative overflow-hidden bg-ink py-24 text-paper sm:py-32">
+    <section className="relative ink-band overflow-hidden bg-ink py-24 text-paper sm:py-32">
       <div className="dots absolute inset-0 opacity-40" aria-hidden="true" />
       <div className="relative mx-auto max-w-6xl px-5">
         <div className="flex flex-col items-center text-center">

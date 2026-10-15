@@ -1,23 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { browserSupabase, supabaseConfigured } from "@/lib/supabase";
 import { Button, Field, TextInput } from "@/components/admin/AdminUI";
+import AdminNav from "@/components/admin/AdminNav";
 
 const AdminContext = createContext(null);
 
 export function useAdmin() {
   return useContext(AdminContext);
 }
-
-const TABS = [
-  { href: "/admin", label: "Posts" },
-  { href: "/admin/recipes", label: "Recipes" },
-  { href: "/admin/products", label: "Shop" },
-];
 
 function Centered({ children }) {
   return (
@@ -57,7 +51,13 @@ function SignIn({ supabase }) {
           <TextInput type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         <Field label="Password">
-          <TextInput type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <TextInput
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </Field>
         {error && <p className="rounded-2xl bg-pink-soft px-4 py-2 text-sm font-semibold text-pink-deep">{error}</p>}
         <Button type="submit" disabled={busy} className="w-full">
@@ -117,8 +117,7 @@ export default function AdminShell({ children }) {
       <Centered>
         <p className="font-semibold">The admin isn&rsquo;t connected to a database yet.</p>
         <p className="mt-2 text-ink/70">
-          Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY on Netlify, then redeploy. The README has the
-          steps.
+          Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY on Netlify, then redeploy. The README has the steps.
         </p>
       </Centered>
     );
@@ -143,39 +142,13 @@ export default function AdminShell({ children }) {
     );
   }
 
-  const tabActive = (href) => (href === "/admin" ? pathname === "/admin" || pathname.startsWith("/admin/posts") : pathname.startsWith(href));
-
   return (
     <AdminContext.Provider value={{ supabase, user: state.user, refreshSite }}>
       <div className="min-h-screen bg-blush/60">
-        <header className="sticky top-0 z-40 border-b-[3px] border-ink bg-paper">
-          <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5">
-            <Link href="/admin" className="relative block h-11 w-11 shrink-0" aria-label="Admin home">
-              <Image src="/logo.webp" alt="" fill sizes="44px" className="object-contain" />
-            </Link>
-            <nav aria-label="Admin" className="flex flex-1 gap-1 overflow-x-auto">
-              {TABS.map((t) => (
-                <Link
-                  key={t.href}
-                  href={t.href}
-                  aria-current={tabActive(t.href) ? "page" : undefined}
-                  className={`rounded-full border-[2.5px] px-4 py-1.5 font-display tracking-wide whitespace-nowrap ${
-                    tabActive(t.href) ? "border-ink bg-pink text-paper" : "border-transparent hover:border-ink"
-                  }`}
-                >
-                  {t.label}
-                </Link>
-              ))}
-            </nav>
-            <Link href="/" target="_blank" className="hidden text-sm font-semibold text-ink/70 hover:underline sm:block">
-              View site ↗
-            </Link>
-            <button type="button" onClick={() => supabase.auth.signOut()} className="text-sm font-semibold text-ink/70 hover:underline">
-              Sign out
-            </button>
-          </div>
-        </header>
-        <main className="mx-auto max-w-5xl px-4 py-6 sm:py-8">{children}</main>
+        <AdminNav pathname={pathname} email={state.user.email} onSignOut={() => supabase.auth.signOut()} />
+        <div className="lg:pl-72">
+          <main className="mx-auto max-w-5xl px-4 pb-32 pt-6 sm:pt-8 lg:pb-10">{children}</main>
+        </div>
       </div>
     </AdminContext.Provider>
   );
