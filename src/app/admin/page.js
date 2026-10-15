@@ -48,8 +48,12 @@ function FromHandoffHero() {
     if (!rejected && !(userLogin && password)) return;
     window.history.replaceState(null, "", window.location.pathname);
     const connecting = rejected
-      ? Promise.reject(new Error("WordPress wasn't connected. Press Connect WordPress and choose Yes, I approve of this connection."))
-      : call({ method: "POST", body: JSON.stringify({ connect: { user_login: userLogin, password } }) }).finally(() => setReload((n) => n + 1));
+      ? Promise.reject(
+          new Error("WordPress wasn't connected. Press Connect WordPress and choose Yes, I approve of this connection."),
+        )
+      : call({ method: "POST", body: JSON.stringify({ connect: { user_login: userLogin, password } }) }).finally(() =>
+          setReload((n) => n + 1),
+        );
     connecting
       .then(({ user }) => setNotice({ type: "success", text: `WordPress is connected as ${user}.` }))
       .catch((err) => setNotice({ type: "error", text: err.message }));
@@ -117,8 +121,8 @@ function FromHandoffHero() {
         <div className="space-y-3">
           <Notice notice={notice} />
           <p className="text-ink/75">
-            Connect the Coco&rsquo;s Care WordPress once and posts sent from Handoff Hero show up here. You&rsquo;ll sign in to WordPress with an Editor or Administrator
-            account and approve the connection.
+            Connect the Coco&rsquo;s Care WordPress once and posts sent from Handoff Hero show up here. You&rsquo;ll sign in to
+            WordPress with an Editor or Administrator account and approve the connection.
           </p>
           <Button onClick={connect}>Connect WordPress</Button>
         </div>
@@ -127,7 +131,10 @@ function FromHandoffHero() {
   }
 
   return (
-    <Card title="From Handoff Hero" aside={state.posts.length ? <span className="font-semibold text-ink/60">{state.posts.length} new</span> : null}>
+    <Card
+      title="From Handoff Hero"
+      aside={state.posts.length ? <span className="font-semibold text-ink/60">{state.posts.length} new</span> : null}
+    >
       <div className="space-y-3">
         <Notice notice={notice || (state.error ? { type: "error", text: state.error } : null)} />
         {state.loading ? (
@@ -159,21 +166,27 @@ function FromHandoffHero() {
   );
 }
 
+// New posts start in Coco's Handoff Hero account, which writes in her voice.
+const HANDOFF_HERO_NEW_POST = "https://handoffhero.com/generate";
+
 export default function AdminPosts() {
   return (
     <AdminList
       table="posts"
       title="Posts"
-      intro="Write a post here, or send one from Handoff Hero as a draft and finish it here. Add photos, product cards and a recipe, then mark it ready for review or put it live."
-      newHref="/admin/posts/new"
+      intro="Write a new post in Handoff Hero and send it here as a draft. Then finish it here: add photos, product cards and a recipe, and mark it ready for review or put it live."
+      newHref={HANDOFF_HERO_NEW_POST}
+      newExternal
       newLabel="New post"
+      altHref="/admin/posts/new"
+      altLabel="or start a blank one here"
       select="id, title, category, status, cover_url, updated_at"
       statuses={[
         { value: "review", label: "Ready for review" },
         { value: "draft", label: "Drafts" },
         { value: "published", label: "Live" },
       ]}
-      emptyText="No posts here yet. Start one with New post, or finish one from Handoff Hero above."
+      emptyText="No posts here yet. Tap New post to write one in Handoff Hero, then finish it here."
       render={(r) => (
         <>
           <RowThumb src={r.cover_url} fallback="📝" />
