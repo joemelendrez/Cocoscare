@@ -107,7 +107,7 @@ export default async function PostPage({ params }) {
         <div className="relative mx-auto max-w-3xl px-5 text-center">
           <Link
             href="/blog"
-            className="sticker-sm inline-flex -rotate-2 items-center gap-2 rounded-full bg-paper px-4 py-1 font-display tracking-wide text-ink"
+            className="follow-theme sticker-sm inline-flex -rotate-2 items-center gap-2 rounded-full bg-paper px-4 py-1 font-display tracking-wide text-ink"
           >
             <CategoryIcon name={cat.icon} className="h-5 w-5" /> {cat.label}
           </Link>
