@@ -25,7 +25,7 @@ export const NAV = [
 // Tailwind needs full class names written out, so colors map here. `hero`
 // is the title band: white on hot pink, ink on the other pastels.
 export const COLOR = {
-  pink: { bg: "bg-pink", hero: "bg-pink-hero text-paper dots", soft: "bg-pink-soft", text: "text-pink" },
+  pink: { bg: "bg-pink", hero: "bg-pink text-paper dots", soft: "bg-pink-soft", text: "text-pink" },
   butter: { bg: "bg-butter", hero: "bg-butter text-ink dots-ink", soft: "bg-butter/30", text: "text-butter" },
   periwinkle: { bg: "bg-periwinkle", hero: "bg-periwinkle text-ink dots-ink", soft: "bg-periwinkle/25", text: "text-periwinkle" },
   mint: { bg: "bg-mint", hero: "bg-mint text-ink dots-ink", soft: "bg-mint/30", text: "text-mint" },
