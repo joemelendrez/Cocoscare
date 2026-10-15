@@ -133,7 +133,7 @@ export default async function PostPage({ params }) {
               <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} className="post-body" />
             ) : s.type === "faq" ? (
               <div key={i} className="py-4">
-                <FaqBlock title={s.title} items={s.items} />
+                <FaqBlock title={s.title} intro={s.intro} items={s.items} />
               </div>
             ) : s.type === "recipe" ? (
               <div key={i} className="py-6 lg:-mx-24">

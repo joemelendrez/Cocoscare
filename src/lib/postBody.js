@@ -24,12 +24,15 @@ export function bodySegments(body = "", { products = [], recipes = [], html = fa
 
 const FAQ_HEADING = /^(frequently asked questions|faqs?|common questions)\b/i;
 
-// Finds a "Frequently Asked Questions" section (an h2, then each question
-// as an h3 with its answer under it, the shape Handoff Hero's FAQ tool
-// writes) and splits it out as a { type: "faq", items } segment, so it
-// shows as the FAQ card instead of plain headings. The section ends at the
-// next h2. Anything it can't read cleanly (no h3 questions, or WordPress
-// block wrappers inside) stays as ordinary text.
+// Finds a "Frequently Asked Questions" (or "FAQ") section and splits it
+// out as a { type: "faq", items } segment, so it shows as the FAQ card
+// instead of plain text. Questions can be h3 headings (Handoff Hero's FAQ
+// tool and the editor's FAQ button) or paragraphs that open with a bold
+// question ("<p><strong>Question?</strong><br>Answer</p>", how Coco's quick
+// posts write them), mixed in one section. Everything after a question up
+// to the next one is its answer. The section ends at the next h2. Anything
+// it can't read cleanly (no questions, or WordPress block wrappers inside)
+// stays as ordinary text.
 export function splitFaq(html) {
   const heading = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi)].find((m) => FAQ_HEADING.test(stripTags(m[1])));
   if (!heading) return [{ type: "html", html }];
@@ -37,22 +40,39 @@ export function splitFaq(html) {
   const next = html.slice(start).search(/<h2\b/i);
   const end = next === -1 ? html.length : start + next;
   const section = html.slice(start, end);
-  if (/<\/?div\b/i.test(section)) return [{ type: "html", html }];
-
-  const questions = [...section.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/gi)];
-  const items = questions
-    .map((q, i) => ({
-      question: stripTags(q[1]),
-      answer: section.slice(q.index + q[0].length, questions[i + 1]?.index ?? section.length).trim(),
-    }))
-    .filter((item) => item.question && stripTags(item.answer));
-  if (!items.length || stripTags(section.slice(0, questions[0].index))) return [{ type: "html", html }];
+  const items = /<\/?div\b/i.test(section) ? null : faqItems(section);
+  if (!items) return [{ type: "html", html }];
 
   return [
     { type: "html", html: html.slice(0, heading.index) },
-    { type: "faq", title: stripTags(heading[1]), items },
+    { type: "faq", title: stripTags(heading[1]), ...items },
     ...splitFaq(html.slice(end)),
   ];
+}
+
+const BOLD_QUESTION = /^<p\b[^>]*>\s*<(strong|b)\b[^>]*>([\s\S]*?)<\/\1>\s*(?:<br\s*\/?>\s*)*([\s\S]*)<\/p>$/i;
+
+// Reads the questions out of an FAQ section's HTML. Returns null when it
+// finds none. Text before the first question is kept as `intro`.
+function faqItems(section) {
+  const blocks = [...section.matchAll(/<(h3|p|ul|ol|blockquote|figure)\b[^>]*>[\s\S]*?<\/\1>/gi)].map((m) => m[0]);
+  if (stripTags(section.replace(/<(h3|p|ul|ol|blockquote|figure)\b[^>]*>[\s\S]*?<\/\1>/gi, ""))) return null;
+  const items = [];
+  const intro = [];
+  for (const block of blocks) {
+    const h3 = block.match(/^<h3\b[^>]*>([\s\S]*?)<\/h3>$/i);
+    const bold = block.match(BOLD_QUESTION);
+    if (h3) items.push({ question: stripTags(h3[1]), answer: [] });
+    else if (bold && stripTags(bold[2]).endsWith("?")) {
+      items.push({ question: stripTags(bold[2]), answer: [] });
+      if (stripTags(bold[3])) items.at(-1).answer.push(`<p>${bold[3].trim()}</p>`);
+    } else (items.length ? items.at(-1).answer : intro).push(block);
+  }
+  const done = items
+    .map((item) => ({ question: item.question, answer: item.answer.join("\n") }))
+    .filter((item) => item.question && stripTags(item.answer));
+  if (!done.length) return null;
+  return { intro: intro.join("\n"), items: done };
 }
 
 // FAQPage structured data for Google, from the FAQ segments.

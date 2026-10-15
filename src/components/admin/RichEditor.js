@@ -162,14 +162,29 @@ export default function RichEditor({ value, onChange, library, onUploadPhoto, on
     setLinkOpen(false);
   };
 
+  // Adds a question to the end of the post's FAQ section (or starts one
+  // where the cursor is), so new questions join the imported ones in the
+  // same FAQ card.
   const addFaq = () => {
-    const hasFaq = /^##\s+(frequently asked questions|faqs?)\b/im.test(value);
-    const blocks = [
-      ...(hasFaq ? [] : [{ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Frequently Asked Questions" }] }]),
+    const question = [
       { type: "heading", attrs: { level: 3 }, content: [{ type: "text", text: "Your question?" }] },
       { type: "paragraph", content: [{ type: "text", text: "The answer in a sentence or two." }] },
     ];
-    chain().insertContent(blocks).run();
+    let faqAt = null;
+    let endAt = null;
+    editor.state.doc.forEach((node, offset) => {
+      if (node.type.name !== "heading" || node.attrs.level !== 2) return;
+      if (faqAt === null && /^(frequently asked questions|faqs?|common questions)\b/i.test(node.textContent.trim())) faqAt = offset;
+      else if (faqAt !== null && endAt === null) endAt = offset;
+    });
+    if (faqAt === null) {
+      chain()
+        .insertContent([{ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Frequently Asked Questions" }] }, ...question])
+        .run();
+      return;
+    }
+    const at = endAt ?? editor.state.doc.content.size;
+    chain().insertContentAt(at, question).setTextSelection(at + 1).scrollIntoView().run();
   };
 
   return (

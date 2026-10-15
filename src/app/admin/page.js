@@ -164,15 +164,16 @@ export default function AdminPosts() {
     <AdminList
       table="posts"
       title="Posts"
-      intro="Write posts in Handoff Hero and send them to your blog as a draft. Finish them here with photos, product cards and a recipe, then mark them ready for review."
+      intro="Write a post here, or send one from Handoff Hero as a draft and finish it here. Add photos, product cards and a recipe, then mark it ready for review or put it live."
       newHref="/admin/posts/new"
+      newLabel="New post"
       select="id, title, category, status, cover_url, updated_at"
       statuses={[
         { value: "review", label: "Ready for review" },
         { value: "draft", label: "Drafts" },
         { value: "published", label: "Live" },
       ]}
-      emptyText="No posts here yet. Finish one from Handoff Hero above."
+      emptyText="No posts here yet. Start one with New post, or finish one from Handoff Hero above."
       render={(r) => (
         <>
           <RowThumb src={r.cover_url} fallback="📝" />
