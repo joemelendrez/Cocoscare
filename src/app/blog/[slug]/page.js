@@ -80,10 +80,11 @@ export default async function PostPage({ params }) {
   const date = post.published_at
     ? new Date(post.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null;
-  const pinImage = recipe?.image_url || post.cover_url;
-  const pinUrl = pinImage
-    ? `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({ url, media: pinImage, description: post.title })}`
-    : null;
+  // Every Save goes out with the post's tall pin image (./pin) and a
+  // description longer than the title, which is what Pinterest searches.
+  const pinImage = `${url}/pin`;
+  const pinDescription = [post.title, post.excerpt].filter(Boolean).join(" | ").slice(0, 480);
+  const pinUrl = `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({ url, media: pinImage, description: pinDescription })}`;
 
   return (
     <article id="post">
@@ -130,6 +131,16 @@ export default async function PostPage({ params }) {
             </a>
           )}
           {jumps.length > 1 && <RecipeJump jumps={jumps} shadow={jumpShadow} />}
+          <div>
+            <a
+              href={pinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="follow-theme sticker-sm mt-5 inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2 font-display tracking-wide text-ink"
+            >
+              <Heart className="h-5 w-5" /> Save to Pinterest
+            </a>
+          </div>
         </div>
       </header>
 
@@ -143,6 +154,9 @@ export default async function PostPage({ params }) {
             <img
               src={post.cover_url}
               alt=""
+              data-pin-media={pinImage}
+              data-pin-description={pinDescription}
+              data-pin-url={url}
               className="sticker mb-10 aspect-[4/3] w-full rotate-[-1deg] rounded-[2rem] object-cover"
             />
           )}
