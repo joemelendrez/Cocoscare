@@ -248,3 +248,8 @@ body {
     display: none !important;
   }
 }
+
+/* Table of contents links land below the floating header. */
+.post-body :is(h2, h3) {
+  scroll-margin-top: 7rem;
+}
