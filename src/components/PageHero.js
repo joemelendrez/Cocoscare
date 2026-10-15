@@ -3,9 +3,9 @@
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { Bubble, Heart, Sparkle, Star } from "@/components/Doodles";
 
-// White text on hot pink (WCAG AA, see globals.css); ink on the pastels.
+// White text on hot pink; ink on the pastels.
 const BG = {
-  pink: "bg-pink-hero text-paper",
+  pink: "bg-pink text-paper",
   butter: "bg-butter",
   periwinkle: "bg-periwinkle",
   mint: "bg-mint",

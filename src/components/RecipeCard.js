@@ -142,6 +142,20 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
   const [doneSteps, setDoneSteps] = useState(() => new Set());
   const { timers, leftFor, start, pause, reset } = useStepTimers(steps);
   const wake = useWakeLock();
+  const id = anchor === true ? "recipe" : anchor || undefined;
+  // Cards start closed to save scrolling; "Jump to recipe" (a #id link)
+  // opens the card it lands on, including on a page loaded with that hash.
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!id) return;
+    const check = () => window.location.hash === `#${id}` && setOpen(true);
+    const frame = requestAnimationFrame(check);
+    window.addEventListener("hashchange", check);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", check);
+    };
+  }, [id]);
   const scale = servings / base;
   const total = (recipe.prep_minutes || 0) + (recipe.cook_minutes || 0);
 
@@ -155,11 +169,13 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
 
   return (
     <section
-      id={anchor === true ? "recipe" : anchor || undefined}
+      id={id}
       aria-label={`Recipe: ${recipe.title}`}
       className="recipe-card sticker scroll-mt-28 overflow-hidden rounded-[2rem] bg-paper"
     >
-      <div className="dots relative border-b-[3px] border-ink bg-pink p-6 text-paper sm:p-8">
+      <div
+        className={`dots relative border-ink bg-pink p-6 text-paper sm:p-8 ${open ? "border-b-[3px]" : "print:border-b-[3px]"}`}
+      >
         <span className="sticker-sm inline-flex -rotate-2 items-center gap-1.5 rounded-full bg-butter px-3 py-1 font-display tracking-wide text-ink">
           <Sparkle className="h-4 w-4" fill="var(--paper)" /> Recipe card
         </span>
@@ -171,6 +187,15 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
           <Stat label="Total" value={formatMinutes(total)} />
         </div>
         <div className="no-print mt-5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            aria-controls={id ? `${id}-body` : undefined}
+            className="rounded-full border-[2.5px] border-ink bg-butter px-4 py-1.5 font-display tracking-wide text-ink shadow-[3px_3px_0_var(--ink)]"
+          >
+            {open ? "Hide recipe ▴" : "Show full recipe ▾"}
+          </button>
           <button
             type="button"
             onClick={() => window.print()}
@@ -201,7 +226,10 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
         </div>
       </div>
 
-      <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_1.4fr]">
+      <div
+        id={id ? `${id}-body` : undefined}
+        className={`gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_1.4fr] ${open ? "grid" : "hidden print:grid"}`}
+      >
         <div>
           <div className="flex items-center justify-between gap-3">
             <h3 className="font-display text-2xl tracking-wide">Ingredients</h3>

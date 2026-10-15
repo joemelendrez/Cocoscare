@@ -67,6 +67,8 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
     e.preventDefault();
     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 112, behavior: "smooth" });
     history.replaceState(null, "", `#${id}`);
+    // replaceState doesn't fire hashchange; recipe cards listen for it to open.
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
   };
 
   if (headings.length < 2) return null;

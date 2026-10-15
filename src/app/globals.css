@@ -13,8 +13,6 @@
   --periwinkle: #7d93e8;
   --butter: #ffcb47;
   --mint: #73dfbf;
-  /* Hot pink for pink hero bands with white text (5.9:1, WCAG AA). */
-  --pink-hero: #c2007a;
 }
 
 @theme inline {
@@ -27,7 +25,6 @@
   --color-periwinkle: var(--periwinkle);
   --color-butter: var(--butter);
   --color-mint: var(--mint);
-  --color-pink-hero: var(--pink-hero);
   --font-sans: var(--font-fredoka);
   --font-display: var(--font-lilita);
 }
