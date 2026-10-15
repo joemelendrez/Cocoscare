@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import EmailSignup from "@/components/EmailSignup";
 import FaqBlock from "@/components/FaqBlock";
 import ReadingProgress from "@/components/ReadingProgress";
 import TableOfContents from "@/components/TableOfContents";
@@ -11,6 +12,7 @@ import { COLOR, SITE, categoryFor } from "@/lib/content";
 import { getPost, getPostSlugs, readingMinutes } from "@/lib/data";
 import { bodySegments, faqSchema } from "@/lib/postBody";
 import { withHeadingIds } from "@/lib/postHeadings";
+import { mailchimpConfigured } from "@/lib/mailchimp";
 import { recipeSchema } from "@/lib/recipe";
 
 export const revalidate = 60;
@@ -198,7 +200,8 @@ export default async function PostPage({ params }) {
         </div>
       )}
 
-      <div className="mx-auto max-w-3xl px-5 pb-20">
+      <div className="mx-auto max-w-3xl space-y-8 px-5 pb-20">
+        {mailchimpConfigured && <EmailSignup source={post.category || "blog-post"} />}
         <div className="sticker flex flex-col items-center gap-3 rounded-[2rem] bg-blush p-6 text-center sm:flex-row sm:text-left">
           <Heart className="h-10 w-10 shrink-0 animate-wiggle" />
           <p className="flex-1 text-lg font-medium">Thanks for reading! Pin it for later, and come back for more.</p>

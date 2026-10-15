@@ -8,6 +8,8 @@ import { Cookie, Flower, Heart, Sparkle, Star } from "@/components/Doodles";
 import { Parallax, Reveal, Stagger, StaggerItem } from "@/components/Motion";
 import { CATEGORIES } from "@/lib/content";
 import { getPosts, getProducts } from "@/lib/data";
+import { mailchimpConfigured } from "@/lib/mailchimp";
+import EmailSignup from "@/components/EmailSignup";
 
 const TILTS = [-2, 1.5, -1, 2];
 
@@ -37,7 +39,9 @@ export default async function Home() {
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <Reveal>
           <SectionTitle eyebrow="Fresh from the kitchen table" title="Latest" accent="posts">
-            {sample ? "Real posts land here once the blog is connected." : "New recipes, finds and outings, fresh from the kitchen table."}
+            {sample
+              ? "Real posts land here once the blog is connected."
+              : "New recipes, finds and outings, fresh from the kitchen table."}
           </SectionTitle>
         </Reveal>
         <Stagger className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -48,7 +52,10 @@ export default async function Home() {
           ))}
         </Stagger>
         <div className="mt-10 text-center">
-          <Link href="/blog" className="sticker lift inline-block rounded-full bg-butter px-7 py-3 font-display text-xl tracking-wide">
+          <Link
+            href="/blog"
+            className="sticker lift inline-block rounded-full bg-butter px-7 py-3 font-display text-xl tracking-wide"
+          >
             See all posts
           </Link>
         </div>
@@ -81,12 +88,15 @@ export default async function Home() {
             <SectionTitle eyebrow="Meet the mama" title="10+ years of" accent="other people's kids" center={false} />
             <div className="mt-6 space-y-4 text-lg text-ink/80">
               <p>
-                I spent my whole career as a nanny: naps, picky eaters, rainy days and every baby gadget you can
-                imagine. Now I&rsquo;m home with my own little one, and this is where I share what actually works.
+                I spent my whole career as a nanny: naps, picky eaters, rainy days and every baby gadget you can imagine. Now
+                I&rsquo;m home with my own little one, and this is where I share what actually works.
               </p>
               <p>No fluff, no 40-step recipes. Just the good stuff, tested on real kids.</p>
             </div>
-            <Link href="/about" className="sticker lift mt-8 inline-flex items-center gap-2 rounded-full bg-pink px-7 py-3 font-display text-xl tracking-wide text-paper">
+            <Link
+              href="/about"
+              className="sticker lift mt-8 inline-flex items-center gap-2 rounded-full bg-pink px-7 py-3 font-display text-xl tracking-wide text-paper"
+            >
               My story <Sparkle className="h-5 w-5" />
             </Link>
           </Reveal>
@@ -117,6 +127,14 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {mailchimpConfigured && (
+        <section className="mx-auto max-w-3xl px-5 py-20">
+          <Reveal>
+            <EmailSignup source="home" />
+          </Reveal>
+        </section>
+      )}
     </>
   );
 }
