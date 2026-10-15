@@ -30,7 +30,7 @@
 }
 
 html {
-  overflow-x: hidden;
+  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
@@ -38,7 +38,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-fredoka), ui-rounded, system-ui, sans-serif;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 ::selection {
@@ -247,4 +247,9 @@ body {
   .recipe-card .no-print {
     display: none !important;
   }
+}
+
+/* Table of contents links land below the floating header. */
+.post-body :is(h2, h3) {
+  scroll-margin-top: 7rem;
 }

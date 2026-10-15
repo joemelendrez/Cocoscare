@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import FaqBlock from "@/components/FaqBlock";
+import ReadingProgress from "@/components/ReadingProgress";
+import TableOfContents from "@/components/TableOfContents";
 import RecipeCard from "@/components/RecipeCard";
 import { ProductEmbed } from "@/components/Cards";
 import { CategoryIcon, Heart } from "@/components/Doodles";
 import { COLOR, SITE, categoryFor } from "@/lib/content";
 import { getPost, getPostSlugs, readingMinutes } from "@/lib/data";
 import { bodySegments, faqSchema } from "@/lib/postBody";
+import { withHeadingIds } from "@/lib/postHeadings";
 import { recipeSchema } from "@/lib/recipe";
 
 export const revalidate = 60;
@@ -40,10 +43,7 @@ export async function generateMetadata({ params }) {
 
 function JsonLd({ item }) {
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(item).replace(/</g, "\\u003c") }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(item).replace(/</g, "\\u003c") }} />
   );
 }
 
@@ -56,13 +56,17 @@ export default async function PostPage({ params }) {
   const url = `${SITE.url}/blog/${post.slug}`;
   const isHtml = post.source === "wordpress";
   const body = isHtml ? post.html : post.body;
-  const segments = bodySegments(body, { products: post.products, recipes: post.recipes, html: isHtml });
+  const rawSegments = bodySegments(body, { products: post.products, recipes: post.recipes, html: isHtml });
   // The recipe for Google, Pinterest and "Jump to recipe": the one attached
   // at the end, or else the first recipe card in the post.
   const recipe = post.recipe || post.recipes[0] || null;
   // "Jump to recipe" goes to its first card in the post, else the end one.
-  const faq = faqSchema(segments);
-  const anchorAt = segments.findIndex((s) => s.type === "recipe" && s.recipe.id === recipe?.id);
+  const faq = faqSchema(rawSegments);
+  const anchorAt = rawSegments.findIndex((s) => s.type === "recipe" && s.recipe.id === recipe?.id);
+  const { segments, headings } = withHeadingIds(
+    rawSegments.map((s, i) => (i === anchorAt ? { ...s, anchor: true } : s)),
+    { endRecipe: anchorAt === -1 ? post.recipe : null },
+  );
   const date = post.published_at
     ? new Date(post.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null;
@@ -72,7 +76,8 @@ export default async function PostPage({ params }) {
     : null;
 
   return (
-    <article>
+    <article id="post">
+      <ReadingProgress targetId="post" />
       <JsonLd
         item={{
           "@context": "https://schema.org",
@@ -89,7 +94,9 @@ export default async function PostPage({ params }) {
       {faq && <JsonLd item={faq} />}
       {recipe && <JsonLd item={recipeSchema(recipe, { url, author: "Coco", published: post.published_at })} />}
 
-      <header className={`dots-ink relative overflow-hidden border-b-[3px] border-ink pb-14 pt-32 sm:pt-36 ${COLOR[cat.color].bg}`}>
+      <header
+        className={`dots-ink relative overflow-hidden border-b-[3px] border-ink pb-14 pt-32 sm:pt-36 ${COLOR[cat.color].bg}`}
+      >
         <div className="relative mx-auto max-w-3xl px-5 text-center">
           <Link
             href="/blog"
@@ -113,38 +120,48 @@ export default async function PostPage({ params }) {
         </div>
       </header>
 
-      <div className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
-        {post.cover_url && (
-          // eslint-disable-next-line @next/next/no-img-element -- Supabase storage or WordPress URLs
-          <img src={post.cover_url} alt="" className="sticker mb-10 aspect-[4/3] w-full rotate-[-1deg] rounded-[2rem] object-cover" />
-        )}
-
-        {post.products.length > 0 && (
-          <p className="mb-8 rounded-2xl border-2 border-dashed border-ink/40 px-4 py-3 text-sm text-ink/70">
-            This post has affiliate links. If you buy through them I may earn a small commission at no extra cost to
-            you.
-          </p>
-        )}
-
-        {/* Text chunks get the post typography; cards sit between them unstyled. */}
-        <div className="space-y-[1.1em]">
-          {segments.map((s, i) =>
-            s.type === "html" ? (
-              <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} className="post-body" />
-            ) : s.type === "faq" ? (
-              <div key={i} className="py-4">
-                <FaqBlock title={s.title} intro={s.intro} items={s.items} />
-              </div>
-            ) : s.type === "recipe" ? (
-              <div key={i} className="py-6 lg:-mx-24">
-                <RecipeCard recipe={s.recipe} pinUrl={pinUrl} anchor={i === anchorAt} />
-              </div>
-            ) : (
-              <div key={i} className="post-body">
-                <ProductEmbed product={s.product} />
-              </div>
-            ),
+      <div className="mx-auto max-w-3xl px-5 py-12 sm:py-16 lg:grid lg:max-w-6xl lg:grid-cols-[15rem_minmax(0,48rem)] lg:gap-10">
+        <aside className="hidden lg:block">
+          <TableOfContents headings={headings} />
+        </aside>
+        <div>
+          {post.cover_url && (
+            // eslint-disable-next-line @next/next/no-img-element -- Supabase storage or WordPress URLs
+            <img
+              src={post.cover_url}
+              alt=""
+              className="sticker mb-10 aspect-[4/3] w-full rotate-[-1deg] rounded-[2rem] object-cover"
+            />
           )}
+
+          {post.products.length > 0 && (
+            <p className="mb-8 rounded-2xl border-2 border-dashed border-ink/40 px-4 py-3 text-sm text-ink/70">
+              This post has affiliate links. If you buy through them I may earn a small commission at no extra cost to you.
+            </p>
+          )}
+
+          <TableOfContents headings={headings} variant="mobile" />
+
+          {/* Text chunks get the post typography; cards sit between them unstyled. */}
+          <div className="space-y-[1.1em]">
+            {segments.map((s, i) =>
+              s.type === "html" ? (
+                <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} className="post-body" />
+              ) : s.type === "faq" ? (
+                <div key={i} className="py-4">
+                  <FaqBlock title={s.title} intro={s.intro} items={s.items} />
+                </div>
+              ) : s.type === "recipe" ? (
+                <div key={i} className="py-6">
+                  <RecipeCard recipe={s.recipe} pinUrl={pinUrl} anchor={i === anchorAt} />
+                </div>
+              ) : (
+                <div key={i} className="post-body">
+                  <ProductEmbed product={s.product} />
+                </div>
+              ),
+            )}
+          </div>
         </div>
       </div>
 
@@ -158,7 +175,10 @@ export default async function PostPage({ params }) {
         <div className="sticker flex flex-col items-center gap-3 rounded-[2rem] bg-blush p-6 text-center sm:flex-row sm:text-left">
           <Heart className="h-10 w-10 shrink-0 animate-wiggle" />
           <p className="flex-1 text-lg font-medium">Thanks for reading! Pin it for later, and come back for more.</p>
-          <Link href="/blog" className="shrink-0 rounded-full border-[2.5px] border-ink bg-paper px-5 py-2 font-display tracking-wide">
+          <Link
+            href="/blog"
+            className="shrink-0 rounded-full border-[2.5px] border-ink bg-paper px-5 py-2 font-display tracking-wide"
+          >
             More posts
           </Link>
         </div>
