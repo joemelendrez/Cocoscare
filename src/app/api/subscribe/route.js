@@ -1,23 +1,11 @@
+import { EMAIL, clientIp, ipLimiter } from "@/lib/ipLimit";
 import { mailchimpConfigured, subscribe } from "@/lib/mailchimp";
 
 // The blog's email signup: adds the address to the Mailchimp audience,
 // tagged "blog" plus where it came from (a post's category, or "home").
 // The answer is the same for a new or existing address.
 
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_PER_WINDOW = 5;
-const hits = new Map();
-
-// Per-instance, per-IP: enough to stop one person or bot hammering the form.
-function limited(ip) {
-  const now = Date.now();
-  const recent = (hits.get(ip) || []).filter((t) => now - t < WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear();
-  return recent.length > MAX_PER_WINDOW;
-}
+const limited = ipLimiter({ windowMs: 10 * 60 * 1000, max: 5 });
 
 export async function POST(request) {
   let body;
@@ -35,9 +23,7 @@ export async function POST(request) {
   }
   const source = typeof body?.source === "string" && /^[a-z0-9-]{1,40}$/.test(body.source) ? body.source : null;
 
-  const ip =
-    request.headers.get("x-nf-client-connection-ip") || request.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
-  if (limited(ip)) return Response.json({ error: "Too many tries. Try again in a few minutes." }, { status: 429 });
+  if (limited(clientIp(request))) return Response.json({ error: "Too many tries. Try again in a few minutes." }, { status: 429 });
 
   if (!mailchimpConfigured) return Response.json({ error: "Signups aren't open yet. Check back soon!" }, { status: 503 });
   const result = await subscribe(email, ["blog", source].filter(Boolean)).catch((e) => ({ error: e.message }));

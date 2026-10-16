@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Heart, Sparkle } from "@/components/Doodles";
+import RecipeEmail from "@/components/RecipeEmail";
 import { formatAmount, formatClock, formatMinutes } from "@/lib/recipe";
 
 // Two soft chimes, made with Web Audio so there's no sound file to load.
@@ -183,7 +184,9 @@ function useWakeLock() {
 
 // `anchor` is the card's id for "Jump to recipe" (true = "recipe"); a post
 // with several recipes gives each its own (recipe, recipe-2, ...).
-export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
+// `emailFrom` ({ slug, listOpen }) turns on "Email me this" once recipe
+// emails are set up; `pinUrl` saves this recipe's own pin.
+export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom }) {
   const steps = recipe.steps || [];
   const ingredients = recipe.ingredients || [];
   const base = recipe.servings || 1;
@@ -196,6 +199,8 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
   // Cards start closed to save scrolling; "Jump to recipe" (a #id link)
   // opens the card it lands on, including on a page loaded with that hash.
   const [open, setOpen] = useState(false);
+  const [emailing, setEmailing] = useState(false);
+  const canEmail = Boolean(emailFrom?.slug && recipe.id);
   useEffect(() => {
     if (!id) return;
     const check = () => window.location.hash === `#${id}` && setOpen(true);
@@ -253,6 +258,16 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
           >
             Print
           </button>
+          {canEmail && (
+            <button
+              type="button"
+              onClick={() => setEmailing((v) => !v)}
+              aria-expanded={emailing}
+              className="rounded-full border-[2.5px] border-ink bg-paper px-4 py-1.5 font-display tracking-wide text-ink"
+            >
+              Email me this
+            </button>
+          )}
           {pinUrl && (
             <a
               href={pinUrl}
@@ -260,7 +275,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
               rel="noopener noreferrer"
               className="rounded-full border-[2.5px] border-ink bg-ink px-4 py-1.5 font-display tracking-wide text-paper"
             >
-              Pin it
+              Save to Pinterest
             </a>
           )}
           {wake.supported && (
@@ -274,6 +289,17 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true }) {
             </button>
           )}
         </div>
+        <AnimatePresence initial={false}>
+          {canEmail && emailing && (
+            <RecipeEmail
+              slug={emailFrom.slug}
+              recipeId={String(recipe.id)}
+              anchor={id}
+              listOpen={emailFrom.listOpen}
+              onClose={() => setEmailing(false)}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       <div
