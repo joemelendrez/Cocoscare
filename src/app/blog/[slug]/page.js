@@ -13,6 +13,7 @@ import { getPost, getPostSlugs, readingMinutes } from "@/lib/data";
 import { bodySegments, faqSchema } from "@/lib/postBody";
 import { withHeadingIds } from "@/lib/postHeadings";
 import { mailchimpConfigured } from "@/lib/mailchimp";
+import { resendConfigured } from "@/lib/resend";
 import { recipeSchema } from "@/lib/recipe";
 
 export const revalidate = 60;
@@ -87,6 +88,16 @@ export default async function PostPage({ params }) {
   const pinImage = `${url}/pin`;
   const pinDescription = [post.title, post.excerpt].filter(Boolean).join(" | ").slice(0, 480);
   const pinUrl = `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({ url, media: pinImage, description: pinDescription })}`;
+  // A recipe card saves its own pin: that recipe's photo and name.
+  const recipePinUrl = (r) =>
+    r.id
+      ? `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({
+          url,
+          media: `${pinImage}?${new URLSearchParams({ recipe: String(r.id) })}`,
+          description: [r.title, r.summary || post.excerpt].filter(Boolean).join(" | ").slice(0, 480),
+        })}`
+      : pinUrl;
+  const emailFrom = resendConfigured ? { slug: post.slug, listOpen: mailchimpConfigured } : null;
 
   return (
     <article id="post">
@@ -182,7 +193,7 @@ export default async function PostPage({ params }) {
                 </div>
               ) : s.type === "recipe" ? (
                 <div key={i} className="py-6">
-                  <RecipeCard recipe={s.recipe} pinUrl={pinUrl} anchor={s.anchorId} />
+                  <RecipeCard recipe={s.recipe} pinUrl={recipePinUrl(s.recipe)} anchor={s.anchorId} emailFrom={emailFrom} />
                 </div>
               ) : (
                 <div key={i} className="post-body">
@@ -196,7 +207,12 @@ export default async function PostPage({ params }) {
 
       {post.recipe && (
         <div className="mx-auto max-w-5xl px-5 pb-16">
-          <RecipeCard recipe={post.recipe} pinUrl={pinUrl} anchor={endRecipe?.id ?? false} />
+          <RecipeCard
+            recipe={post.recipe}
+            pinUrl={recipePinUrl(post.recipe)}
+            anchor={endRecipe?.id ?? false}
+            emailFrom={emailFrom}
+          />
         </div>
       )}
 
