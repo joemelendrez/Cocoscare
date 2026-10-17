@@ -1,5 +1,4 @@
 import { ImageResponse } from "next/og";
-import { readFile } from "node:fs/promises";
 import { categoryFor } from "@/lib/content";
 import { getPost } from "@/lib/data";
 import { formatMinutes } from "@/lib/recipe";
@@ -15,10 +14,24 @@ const PINK = "#ff0f9a";
 const INK = "#161016";
 const BAND = { pink: PINK, butter: "#ffcb47", periwinkle: "#7d93e8", mint: "#73dfbf" };
 
-const font = readFile(new URL("../../../fonts/LilitaOne.ttf", import.meta.url));
-// The round Coco sticker (public/logo.webp as a 260px PNG, since Satori
-// can't draw WebP) sits in the top-right corner of every pin.
-const logo = readFile(new URL("./logo.png", import.meta.url)).then((b) => `data:image/png;base64,${b.toString("base64")}`);
+// The title font and the round Coco sticker (a 260px PNG of
+// public/logo.webp, since Satori can't draw WebP) live in public/pin and
+// are fetched from the site itself. Reading them off disk next to this file
+// worked locally, but Netlify's function bundle leaves those files out, so
+// every pin answered 500.
+let assets = null;
+function pinAssets(origin) {
+  assets ??= Promise.all(
+    ["LilitaOne.ttf", "logo.png"].map(async (name) => {
+      const res = await fetch(`${origin}/pin/${name}`, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error(`pin asset ${name}: ${res.status}`);
+      return res.arrayBuffer();
+    }),
+  ).then(([font, logo]) => ({ font, logo: `data:image/png;base64,${Buffer.from(logo).toString("base64")}` }));
+  // A failed fetch isn't kept, so the next pin tries again.
+  assets.catch(() => (assets = null));
+  return assets;
+}
 
 // Satori draws JPEG and PNG only, so a WebP cover (some WordPress uploads)
 // leaves the photo out rather than failing the whole image.
@@ -43,6 +56,7 @@ function titleSize(title) {
 // ?recipe=<id> draws one recipe card's pin instead: its photo, its name and
 // how long it takes, for the recipe card's own Save button.
 export async function GET(req, { params }) {
+  const { font, logo } = await pinAssets(new URL(req.url).origin);
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) return new Response("Not found", { status: 404 });
@@ -111,12 +125,12 @@ export async function GET(req, { params }) {
         <div style={{ display: "flex", marginTop: 30, fontSize: 40, opacity: 0.9 }}>cocoscare.com</div>
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element -- Satori, not the DOM */}
-      <img src={await logo} alt="" width={210} height={210} style={{ position: "absolute", top: 36, right: 36 }} />
+      <img src={logo} alt="" width={210} height={210} style={{ position: "absolute", top: 36, right: 36 }} />
     </div>,
     {
       width: W,
       height: H,
-      fonts: [{ name: "Lilita", data: await font, weight: 400, style: "normal" }],
+      fonts: [{ name: "Lilita", data: font, weight: 400, style: "normal" }],
       headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" },
     },
   );
