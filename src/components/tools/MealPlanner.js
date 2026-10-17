@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import SyncNote from "@/components/SyncNote";
+import { useSyncedSave } from "@/lib/account";
 import { addToGroceryList } from "@/lib/groceryStore";
 import { ingredientText } from "@/lib/recipe";
 
@@ -143,7 +145,7 @@ function Slot({ value, recipes, onChange, label, showLabel }) {
 
 // The free Meal Planner: a week of meals (Coco's recipes or anything
 // typed), then every recipe's ingredients go to the Grocery List in one
-// tap. The plan stays on this device.
+// tap. The plan stays on this device, and syncs to the reader's account.
 export default function MealPlanner({ recipes = [] }) {
   const [plan, setPlan] = useState({});
   const [showAll, setShowAll] = useState(false);
@@ -162,12 +164,14 @@ export default function MealPlanner({ recipes = [] }) {
     });
     return () => cancelAnimationFrame(frame);
   }, []);
-  useEffect(() => {
-    if (!loaded) return;
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ plan, showAll }));
-    } catch {}
-  }, [plan, showAll, loaded]);
+  const saved = useMemo(() => ({ plan, showAll }), [plan, showAll]);
+  const sync = useSyncedSave(STORE_KEY, "meal_plan", saved, {
+    loaded,
+    apply: (v) => {
+      setPlan(v.plan || {});
+      setShowAll(Boolean(v.showAll));
+    },
+  });
 
   const meals = showAll ? MEALS : MEALS.filter((m) => m.key === "dinner");
   const slotKey = (day, meal) => `${day}:${meal}`;
@@ -333,7 +337,9 @@ export default function MealPlanner({ recipes = [] }) {
           </AnimatePresence>
         </li>
       </ol>
-      <p className="no-print mt-4 text-xs text-ink/55">Your plan stays on this device.</p>
+      <p className="no-print mt-4 text-xs text-ink/55">
+        <SyncNote sync={sync} what="plan" />
+      </p>
     </div>
   );
 }

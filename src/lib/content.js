@@ -13,6 +13,8 @@ export const SITE = {
     pinterest: null,
     instagram: null,
   },
+  // Shown on the privacy and terms pages; fill in once the inbox exists.
+  email: null,
 };
 
 export const NAV = [

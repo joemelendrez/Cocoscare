@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import SyncNote from "@/components/SyncNote";
 import RecipeFinder from "@/components/tools/RecipeFinder";
 import { groupByAisle } from "@/lib/groceryAisles";
 import { MAX_ITEM_CHARS, itemKey, parseGroceryList } from "@/lib/groceryList";
 import { GROCERY_KEY, loadGroceryList } from "@/lib/groceryStore";
+import { useSyncedSave } from "@/lib/account";
 import { ingredientText } from "@/lib/recipe";
 import { browserSupabase } from "@/lib/supabase";
 import { walmartUrl } from "@/lib/walmart";
@@ -97,7 +99,7 @@ function useAdminToken() {
 // The free Grocery List tool: paste a list from notes or a text, or add a
 // recipe's ingredients, then send all of it to Instacart, open each item
 // in a Walmart search, or tick items off in the store, grouped by aisle.
-// The list stays on this device.
+// The list stays on this device, and syncs to the reader's account.
 export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
   const [text, setText] = useState("");
   const [got, setGot] = useState(() => new Set());
@@ -131,12 +133,17 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
     });
     return () => cancelAnimationFrame(frame);
   }, []);
-  useEffect(() => {
-    if (!loaded) return;
-    try {
-      localStorage.setItem(GROCERY_KEY, JSON.stringify({ text, got: [...got], added: [...added], byAisle, mode }));
-    } catch {}
-  }, [text, got, added, byAisle, mode, loaded]);
+  const saved = useMemo(() => ({ text, got: [...got], added: [...added], byAisle, mode }), [text, got, added, byAisle, mode]);
+  const sync = useSyncedSave(GROCERY_KEY, "grocery", saved, {
+    loaded,
+    apply: (v) => {
+      setText(v.text || "");
+      setGot(new Set(v.got || []));
+      setAdded(new Set(v.added || []));
+      setByAisle(v.byAisle !== false);
+      setMode(v.mode === "paste" ? "paste" : "build");
+    },
+  });
 
   const items = useMemo(() => parseGroceryList(text), [text]);
   const keyOf = (i) => ingredientText(i).toLowerCase();
@@ -596,7 +603,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                 ))}
               </div>
               <p className="mt-3 text-xs text-ink/55">
-                Tap an item to tick it off in the store. Your list stays on this device.
+                Tap an item to tick it off in the store. <SyncNote sync={sync} />
                 {(instacart || walmartLink) && " We may earn a small commission when you shop through these links."}
               </p>
             </>

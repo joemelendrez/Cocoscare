@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Heart, Sparkle } from "@/components/Doodles";
 import RecipeEmail from "@/components/RecipeEmail";
+import SaveButton from "@/components/SaveButton";
 import ShopRecipe from "@/components/ShopRecipe";
 import { formatAmount, formatClock, formatMinutes } from "@/lib/recipe";
 
@@ -272,6 +273,12 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
           )}
         </div>
         <div className="no-print mt-3 flex flex-wrap gap-1.5">
+          {recipe.id && (
+            <SaveButton
+              item={{ kind: "recipe", ref: String(recipe.id), title: recipe.title, image_url: recipe.image_url || null }}
+              small
+            />
+          )}
           <button type="button" onClick={() => window.print()} className={PILL}>
             Print
           </button>

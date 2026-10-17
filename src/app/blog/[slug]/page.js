@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SaveButton from "@/components/SaveButton";
 import { notFound } from "next/navigation";
 import EmailSignup from "@/components/EmailSignup";
 import FaqBlock from "@/components/FaqBlock";
@@ -29,7 +30,8 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) return { title: "Post not found" };
-  const images = post.cover_url ? [post.cover_url] : ["/opengraph-image.jpg"];
+  // The branded wide preview (./og), drawn from the cover and title.
+  const images = [{ url: `/blog/${post.slug}/og`, width: 1200, height: 630, alt: post.title }];
   return {
     title: post.title,
     description: post.excerpt || undefined,
@@ -147,15 +149,19 @@ export default async function PostPage({ params }) {
             </JumpLink>
           )}
           {jumps.length > 1 && <RecipeJump jumps={jumps} shadow={jumpShadow} />}
-          <div>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <a
               href={pinUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="follow-theme sticker-sm mt-5 inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2 font-display tracking-wide text-ink"
+              className="follow-theme sticker-sm inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2 font-display tracking-wide text-ink"
             >
               <Heart className="h-5 w-5" /> Save to Pinterest
             </a>
+            <SaveButton
+              item={{ kind: "post", ref: post.slug, title: post.title, href: `/blog/${post.slug}`, image_url: post.cover_url || null }}
+              className="follow-theme py-2"
+            />
           </div>
         </div>
       </header>

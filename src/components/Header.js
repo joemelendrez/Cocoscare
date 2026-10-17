@@ -7,7 +7,10 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { COLOR, NAV, SITE } from "@/lib/content";
 import { Bubble, Heart, Sparkle, Star } from "@/components/Doodles";
+import AccountButton from "@/components/AccountButton";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useUser } from "@/lib/account";
+import { supabaseConfigured } from "@/lib/supabase";
 
 const JELLY = { type: "spring", stiffness: 420, damping: 18 };
 // The squish is keyframes, which a spring can't run (it threw on every
@@ -117,6 +120,7 @@ export default function Header() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <AccountButton className="hidden sm:block" />
             <Link
               href="/shop"
               className="hidden rounded-full border-[2.5px] border-ink bg-ink px-5 py-2.5 font-display text-lg tracking-wide text-paper shadow-[4px_4px_0_var(--pink)] transition-transform hover:-translate-y-0.5 hover:rotate-[-2deg] lg:block"
@@ -231,6 +235,7 @@ function PhoneMenu({ pathname, onClose }) {
             );
           })}
         </ul>
+        {supabaseConfigured && <PhoneAccount onClose={onClose} />}
         <motion.p
           className="mt-auto text-center font-display text-lg tracking-wide text-paper"
           initial={{ opacity: 0 }}
@@ -239,6 +244,21 @@ function PhoneMenu({ pathname, onClose }) {
           {SITE.tagline}
         </motion.p>
       </div>
+    </motion.div>
+  );
+}
+
+function PhoneAccount({ onClose }) {
+  const user = useUser();
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.45 } }}>
+      <Link
+        href="/account"
+        onClick={onClose}
+        className="mt-6 flex items-center justify-center gap-2 rounded-full border-[2.5px] border-ink bg-ink px-5 py-3 font-display text-xl tracking-wide text-paper shadow-[4px_4px_0_var(--butter)]"
+      >
+        {user ? "♥ My account" : "Sign in or join, it's free"}
+      </Link>
     </motion.div>
   );
 }
