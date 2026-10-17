@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { parseGroceryList } from "@/lib/groceryList";
 import { ingredientText } from "@/lib/recipe";
+import { browserSupabase } from "@/lib/supabase";
 import { walmartUrl } from "@/lib/walmart";
 
 const STORE_KEY = "coco-grocery-list";
@@ -17,6 +18,40 @@ function load() {
   }
 }
 
+// Shrinks a photo to at most 1600px on its long side (a phone photo is
+// several MB) and returns it as base64 JPEG.
+async function shrinkPhoto(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  return canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+}
+
+// Signed-in site admins (Joseph, Coco) get "Scan a photo"; the scan route
+// checks the same thing, since each scan is a paid AI call.
+function useAdminToken() {
+  const [token, setToken] = useState(null);
+  useEffect(() => {
+    const supabase = browserSupabase();
+    if (!supabase) return;
+    let alive = true;
+    supabase.auth.getSession().then(async ({ data }) => {
+      const session = data.session;
+      if (!session) return;
+      const { data: isAdmin } = await supabase.rpc("is_admin");
+      if (alive && isAdmin === true) setToken(session.access_token);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return token;
+}
+
 // The free Grocery List tool: paste a list from notes or a text, then
 // send all of it to Instacart, open each item in a Walmart search, or tick
 // items off in the store. The list stays on this device.
@@ -27,6 +62,9 @@ export default function GroceryList({ instacart, walmartLink }) {
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const adminToken = useAdminToken();
+  const photoRef = useRef(null);
+  const [scan, setScan] = useState({ busy: false, error: "" });
 
   useEffect(() => {
     const saved = load();
@@ -68,6 +106,27 @@ export default function GroceryList({ instacart, walmartLink }) {
         .map((i) => ingredientText(i))
         .join("\n"),
     );
+  }
+
+  async function scanPhoto(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || scan.busy) return;
+    setScan({ busy: true, error: "" });
+    try {
+      const data = await shrinkPhoto(file);
+      const res = await fetch("/api/shop/scan-list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({ type: "image/jpeg", data }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.text) throw new Error(out.error || "Couldn't read that photo. Try again.");
+      setText((t) => (t.trim() ? `${t.replace(/\s+$/, "")}\n${out.text}` : out.text));
+      setScan({ busy: false, error: "" });
+    } catch (err) {
+      setScan({ busy: false, error: err.message || "Couldn't read that photo. Try again." });
+    }
   }
 
   async function copyList() {
@@ -121,6 +180,19 @@ export default function GroceryList({ instacart, walmartLink }) {
           className="mt-3 w-full resize-y rounded-2xl border-[2.5px] border-ink bg-paper px-4 py-3 text-base leading-relaxed text-ink outline-none placeholder:text-ink/35 focus:shadow-[3px_3px_0_var(--pink)]"
         />
         <div className="mt-3 flex flex-wrap gap-2">
+          {adminToken && (
+            <>
+              <input ref={photoRef} type="file" accept="image/*" onChange={scanPhoto} className="hidden" />
+              <button
+                type="button"
+                onClick={() => photoRef.current?.click()}
+                disabled={scan.busy}
+                className="rounded-full border-2 border-ink bg-mint px-3 py-1 text-sm font-semibold disabled:opacity-60"
+              >
+                {scan.busy ? "Reading your list…" : "📷 Scan a photo"}
+              </button>
+            </>
+          )}
           {!text && (
             <button
               type="button"
@@ -143,6 +215,7 @@ export default function GroceryList({ instacart, walmartLink }) {
             </button>
           )}
         </div>
+        {scan.error && <p className="mt-2 text-sm font-semibold text-pink-deep">{scan.error}</p>}
       </div>
 
       <div className="rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--pink)] sm:p-6">
