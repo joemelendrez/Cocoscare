@@ -4,7 +4,7 @@ import { getPostSlugs } from "@/lib/data";
 export const revalidate = 3600;
 
 export default async function sitemap() {
-  const pages = ["", "/blog", "/shop", "/tools", "/tools/grocery-list", "/about"].map((path) => ({
+  const pages = ["", "/blog", "/shop", "/tools", "/tools/grocery-list", "/tools/meal-planner", "/tools/kitchen-converter", "/tools/boredom-buster", "/about"].map((path) => ({
     url: `${SITE.url}${path}`,
     lastModified: new Date(),
   }));

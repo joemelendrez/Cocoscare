@@ -4,21 +4,61 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import RecipeFinder from "@/components/tools/RecipeFinder";
 import { groupByAisle } from "@/lib/groceryAisles";
-import { parseGroceryList } from "@/lib/groceryList";
+import { MAX_ITEM_CHARS, itemKey, parseGroceryList } from "@/lib/groceryList";
+import { GROCERY_KEY, loadGroceryList } from "@/lib/groceryStore";
 import { ingredientText } from "@/lib/recipe";
 import { browserSupabase } from "@/lib/supabase";
 import { walmartUrl } from "@/lib/walmart";
 
-const STORE_KEY = "coco-grocery-list";
-const EXAMPLE = "Milk x2\nEggs\n2 lbs ground beef\nBananas\n3x yogurt cups\nBread\nShredded cheese";
+const USUALS_KEY = "coco-grocery-usuals";
 
-function load() {
+// One-tap chips for the things most families buy every week.
+const STAPLES = [
+  { label: "Fridge", items: ["Milk", "Eggs", "Butter", "Shredded cheese", "Yogurt", "String cheese"] },
+  {
+    label: "Fruits & veggies",
+    items: ["Bananas", "Apples", "Strawberries", "Grapes", "Carrots", "Broccoli", "Avocados", "Onions"],
+  },
+  { label: "Meat", items: ["Chicken breast", "Ground beef", "Deli turkey", "Bacon"] },
+  { label: "Pantry", items: ["Bread", "Rice", "Pasta", "Cereal", "Oatmeal", "Peanut butter", "Tortillas"] },
+  {
+    label: "Snacks & kids",
+    items: ["Goldfish crackers", "Applesauce pouches", "Granola bars", "Juice boxes", "Diapers", "Wipes"],
+  },
+  { label: "Home", items: ["Paper towels", "Toilet paper", "Dish soap", "Trash bags"] },
+];
+
+function loadUsuals() {
   try {
-    return JSON.parse(localStorage.getItem(STORE_KEY) || "null") || null;
+    const list = JSON.parse(localStorage.getItem(USUALS_KEY) || "[]");
+    return Array.isArray(list) ? list.filter((i) => typeof i === "string").slice(0, 60) : [];
   } catch {
-    return null;
+    return [];
   }
 }
+
+function Chips({ items, onList, onAdd }) {
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {items.map((name) => {
+        const has = onList(name);
+        return (
+          <button
+            key={name}
+            type="button"
+            onClick={() => onAdd(name)}
+            disabled={has}
+            className={`rounded-full border-2 border-ink px-3 py-0.5 text-sm font-semibold transition-transform active:scale-95 ${has ? "bg-mint/60 text-ink/60" : "bg-paper hover:-translate-y-0.5 hover:bg-butter"}`}
+          >
+            {has ? `✓ ${name}` : `+ ${name}`}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+const EXAMPLE = "Milk x2\nEggs\n2 lbs ground beef\nBananas\n3x yogurt cups\nBread\nShredded cheese";
 
 // Shrinks a photo to at most 1600px on its long side (a phone photo is
 // several MB) and returns it as base64 JPEG.
@@ -63,6 +103,11 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
   const [got, setGot] = useState(() => new Set());
   const [added, setAdded] = useState(() => new Set());
   const [byAisle, setByAisle] = useState(true);
+  const [mode, setMode] = useState("build");
+  const [entry, setEntry] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [usuals, setUsuals] = useState([]);
+  const [savedUsuals, setSavedUsuals] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
@@ -72,14 +117,16 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
   const [scan, setScan] = useState({ busy: false, error: "" });
 
   useEffect(() => {
-    const saved = load();
+    const saved = loadGroceryList();
     const frame = requestAnimationFrame(() => {
       if (saved) {
         setText(saved.text || "");
         setGot(new Set(saved.got || []));
         setAdded(new Set(saved.added || []));
         if (saved.byAisle === false) setByAisle(false);
+        if (saved.mode === "paste") setMode("paste");
       }
+      setUsuals(loadUsuals());
       setLoaded(true);
     });
     return () => cancelAnimationFrame(frame);
@@ -87,9 +134,9 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ text, got: [...got], added: [...added], byAisle }));
+      localStorage.setItem(GROCERY_KEY, JSON.stringify({ text, got: [...got], added: [...added], byAisle, mode }));
     } catch {}
-  }, [text, got, added, byAisle, loaded]);
+  }, [text, got, added, byAisle, mode, loaded]);
 
   const items = useMemo(() => parseGroceryList(text), [text]);
   const keyOf = (i) => ingredientText(i).toLowerCase();
@@ -114,6 +161,44 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
         .map((i) => ingredientText(i))
         .join("\n"),
     );
+  }
+
+  // Adds one typed or tapped item; the same item again just adds to its amount.
+  function addLine(line) {
+    const clean = line.replace(/\s+/g, " ").trim().slice(0, MAX_ITEM_CHARS);
+    if (!clean) return;
+    setText((t) => (t.trim() ? `${t.replace(/\s+$/, "")}\n${clean}` : clean));
+  }
+
+  // Quick-add chips show ✓ for things already on the list.
+  const onListKeys = useMemo(() => new Set(items.map((i) => itemKey(i).split("|")[1])), [items]);
+  const onList = (name) => onListKeys.has(itemKey({ item: name, unit: "" }).split("|")[1]);
+
+  function saveEdit(item, value) {
+    setEditing(null);
+    const target = keyOf(item);
+    const next = value.replace(/\s+/g, " ").trim().slice(0, MAX_ITEM_CHARS);
+    if (next === ingredientText(item)) return;
+    setText(
+      items
+        .map((i) => (keyOf(i) === target ? next : ingredientText(i)))
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+
+  function saveUsuals() {
+    const list = items.map((i) => i.item);
+    setUsuals(list);
+    try {
+      localStorage.setItem(USUALS_KEY, JSON.stringify(list));
+    } catch {}
+    setSavedUsuals(true);
+    setTimeout(() => setSavedUsuals(false), 2000);
+  }
+
+  function addUsuals() {
+    usuals.filter((u) => !onList(u)).forEach(addLine);
   }
 
   function clearTicked() {
@@ -190,22 +275,107 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
     <>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.15fr]">
         <div className="rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--ink)] sm:p-6">
-          <label htmlFor="grocery-text" className="font-display text-2xl tracking-wide">
-            Paste your list
-          </label>
-          <p className="mt-1 text-sm font-medium text-ink/70">
-            One item per line, straight from your notes app or a text. Amounts like &ldquo;2 lbs&rdquo; or &ldquo;x2&rdquo; are
-            fine.
-          </p>
-          <textarea
-            id="grocery-text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={11}
-            placeholder={EXAMPLE}
-            className="mt-3 w-full resize-y rounded-2xl border-[2.5px] border-ink bg-paper px-4 py-3 text-base leading-relaxed text-ink outline-none placeholder:text-ink/35 focus:shadow-[3px_3px_0_var(--pink)]"
-          />
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-2xl tracking-wide">{mode === "build" ? "Make your list" : "Paste your list"}</h2>
+            <div
+              className="inline-flex rounded-full border-2 border-ink p-0.5 text-sm font-semibold"
+              role="group"
+              aria-label="How to add"
+            >
+              {[
+                ["build", "Type it"],
+                ["paste", "Paste it"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setMode(value)}
+                  aria-pressed={mode === value}
+                  className={`rounded-full px-3 py-0.5 ${mode === value ? "bg-ink text-paper" : ""}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {mode === "build" ? (
+            <>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addLine(entry);
+                  setEntry("");
+                }}
+                className="mt-4 flex gap-2"
+              >
+                <label htmlFor="grocery-add" className="sr-only">
+                  Add an item
+                </label>
+                <input
+                  id="grocery-add"
+                  value={entry}
+                  onChange={(e) => setEntry(e.target.value)}
+                  list="grocery-staples"
+                  autoComplete="off"
+                  maxLength={MAX_ITEM_CHARS}
+                  placeholder="Add an item, like “2 lbs apples”"
+                  className="min-w-0 flex-1 rounded-full border-[2.5px] border-ink bg-paper px-4 py-2.5 font-medium outline-none placeholder:text-ink/40 focus:shadow-[3px_3px_0_var(--pink)]"
+                />
+                <datalist id="grocery-staples">
+                  {STAPLES.flatMap((g) => g.items).map((i) => (
+                    <option key={i} value={i} />
+                  ))}
+                </datalist>
+                <button
+                  type="submit"
+                  disabled={!entry.trim()}
+                  className="shrink-0 rounded-full border-[2.5px] border-ink bg-pink px-5 font-display text-lg tracking-wide text-paper shadow-[3px_3px_0_var(--ink)] disabled:opacity-50"
+                >
+                  Add
+                </button>
+              </form>
+
+              {usuals.length > 0 && (
+                <div className="mt-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-display text-lg tracking-wide">My usuals</h3>
+                    <button type="button" onClick={addUsuals} className="text-sm font-semibold text-pink-deep hover:underline">
+                      Add them all
+                    </button>
+                  </div>
+                  <Chips items={usuals} onList={onList} onAdd={addLine} />
+                </div>
+              )}
+
+              <div className="mt-5 space-y-3">
+                <h3 className="font-display text-lg tracking-wide">Quick add</h3>
+                {STAPLES.map((g) => (
+                  <div key={g.label}>
+                    <p className="text-xs font-bold uppercase tracking-wider text-ink/50">{g.label}</p>
+                    <Chips items={g.items} onList={onList} onAdd={addLine} />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <label htmlFor="grocery-text" className="mt-1 block text-sm font-medium text-ink/70">
+                One item per line, straight from your notes app or a text. Amounts like &ldquo;2 lbs&rdquo; or &ldquo;x2&rdquo;
+                are fine.
+              </label>
+              <textarea
+                id="grocery-text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={11}
+                placeholder={EXAMPLE}
+                className="mt-3 w-full resize-y rounded-2xl border-[2.5px] border-ink bg-paper px-4 py-3 text-base leading-relaxed text-ink outline-none placeholder:text-ink/35 focus:shadow-[3px_3px_0_var(--pink)]"
+              />
+            </>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-2">
             {adminToken && (
               <>
                 <input ref={photoRef} type="file" accept="image/*" onChange={scanPhoto} className="hidden" />
@@ -224,13 +394,22 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                 Add a recipe&rsquo;s ingredients ↓
               </a>
             )}
-            {!text && (
+            {!text && mode === "paste" && (
               <button
                 type="button"
                 onClick={() => setText(EXAMPLE)}
                 className="rounded-full border-2 border-ink bg-butter px-3 py-1 text-sm font-semibold"
               >
                 Try an example
+              </button>
+            )}
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={saveUsuals}
+                className="rounded-full border-2 border-ink bg-butter px-3 py-1 text-sm font-semibold"
+              >
+                {savedUsuals ? "Saved as my usuals ✓" : "Save as my usuals"}
               </button>
             )}
             {text && (
@@ -268,7 +447,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
 
           {items.length === 0 ? (
             <p className="mt-6 rounded-2xl border-2 border-dashed border-ink/30 px-4 py-10 text-center font-medium text-ink/60">
-              Your items show up here as you paste them.
+              Your items show up here as you add them.
             </p>
           ) : (
             <>
@@ -354,19 +533,44 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                               exit={{ opacity: 0, height: 0 }}
                               className="flex items-center gap-2 py-2"
                             >
-                              <button
-                                type="button"
-                                onClick={() => toggle(item)}
-                                aria-pressed={done}
-                                className={`flex min-w-0 flex-1 items-center gap-3 text-left ${done ? "text-ink/45 line-through" : ""}`}
-                              >
-                                <span
-                                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-[2.5px] border-ink ${done ? "bg-mint" : "bg-paper"}`}
-                                >
-                                  {done && <span className="text-sm font-bold">✓</span>}
-                                </span>
-                                <span className="min-w-0 break-words font-medium">{ingredientText(item)}</span>
-                              </button>
+                              {editing === k ? (
+                                <input
+                                  autoFocus
+                                  defaultValue={ingredientText(item)}
+                                  aria-label={`Edit ${item.item}`}
+                                  maxLength={MAX_ITEM_CHARS}
+                                  onBlur={(e) => saveEdit(item, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") e.currentTarget.blur();
+                                    if (e.key === "Escape") setEditing(null);
+                                  }}
+                                  className="min-w-0 flex-1 rounded-xl border-[2.5px] border-ink bg-paper px-3 py-1 font-medium outline-none focus:shadow-[3px_3px_0_var(--pink)]"
+                                />
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggle(item)}
+                                    aria-pressed={done}
+                                    className={`flex min-w-0 flex-1 items-center gap-3 text-left ${done ? "text-ink/45 line-through" : ""}`}
+                                  >
+                                    <span
+                                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-[2.5px] border-ink ${done ? "bg-mint" : "bg-paper"}`}
+                                    >
+                                      {done && <span className="text-sm font-bold">✓</span>}
+                                    </span>
+                                    <span className="min-w-0 break-words font-medium">{ingredientText(item)}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditing(k)}
+                                    aria-label={`Edit ${item.item}`}
+                                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink/50 hover:bg-butter hover:text-ink"
+                                  >
+                                    ✎
+                                  </button>
+                                </>
+                              )}
                               <a
                                 href={walmartUrl(item.item, walmartLink)}
                                 target="_blank"
