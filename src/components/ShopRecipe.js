@@ -3,15 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ingredientText } from "@/lib/recipe";
-
-// Walmart has no public cart link for a list of groceries, so each
-// ingredient opens its own Walmart search. `walmartLink` is the affiliate
-// link prefix (Impact's goto.walmart.com link), when there is one.
-function walmartUrl(item, walmartLink) {
-  const search = `https://www.walmart.com/search?q=${encodeURIComponent(item)}`;
-  if (!walmartLink) return search;
-  return `${walmartLink}${walmartLink.includes("?") ? "&" : "?"}u=${encodeURIComponent(search)}`;
-}
+import { walmartUrl } from "@/lib/walmart";
 
 // The recipe card's "Shop ingredients" panel: Instacart (one link, the
 // whole recipe in the cart at a store near the reader), Walmart one item

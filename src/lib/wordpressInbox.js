@@ -40,7 +40,9 @@ async function request(login, path) {
     if (!location) return res;
     const next = new URL(location, url);
     if (next.hostname !== url.hostname || next.protocol !== "https:") {
-      const error = new Error(`WordPress redirected to ${next.origin}${next.pathname}. Connect WordPress again from its real https address.`);
+      const error = new Error(
+        `WordPress redirected to ${next.origin}${next.pathname}. Connect WordPress again from its real https address.`,
+      );
       error.status = 502;
       throw error;
     }
@@ -75,7 +77,10 @@ export async function checkLogin(login) {
   }
   const caps = who.capabilities || {};
   if (!caps.edit_posts && !caps.edit_others_posts) {
-    throw Object.assign(new Error(`${who.slug || login.user} can't see drafts on this site. Connect with an Editor or Administrator account.`), { status: 502 });
+    throw Object.assign(
+      new Error(`${who.slug || login.user} can't see drafts on this site. Connect with an Editor or Administrator account.`),
+      { status: 502 },
+    );
   }
   return who.slug || login.user;
 }
@@ -98,12 +103,18 @@ async function wp(login, path) {
   return res.json();
 }
 
-const plain = (html = "") => decodeEntities(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+const plain = (html = "") =>
+  decodeEntities(html.replace(/<[^>]*>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
 const titleOf = (p) => decodeEntities(p.title?.raw ?? p.title?.rendered ?? "").trim() || "Untitled";
 
 // The newest 50 posts, any state but trashed.
 export async function listInbox(login) {
-  const posts = await wp(login, "posts?status=draft,pending,future,publish,private&context=edit&per_page=50&orderby=modified&_fields=id,status,title,modified_gmt");
+  const posts = await wp(
+    login,
+    "posts?status=draft,pending,future,publish,private&context=edit&per_page=50&orderby=modified&_fields=id,status,title,modified_gmt",
+  );
   return posts.map((p) => ({
     id: p.id,
     title: titleOf(p),
@@ -119,7 +130,10 @@ turndown.addRule("listItem", {
   filter: "li",
   replacement(content, node) {
     const parent = node.parentNode;
-    const marker = parent.nodeName === "OL" ? `${(Number(parent.getAttribute("start")) || 1) + Array.prototype.indexOf.call(parent.children, node)}. ` : "- ";
+    const marker =
+      parent.nodeName === "OL"
+        ? `${(Number(parent.getAttribute("start")) || 1) + Array.prototype.indexOf.call(parent.children, node)}. `
+        : "- ";
     const text = content.replace(/^\n+/, "").replace(/\n+$/, "\n").replace(/\n/gm, "\n  ");
     return marker + text + (node.nextSibling && !/\n$/.test(text) ? "\n" : "");
   },

@@ -11,14 +11,23 @@ import { cardLines } from "@/lib/data";
 const TOKEN_LINE = /^[ \t]*\{\{\s*(product|recipe):([a-z0-9-]+)\s*\}\}[ \t]*$/gm;
 
 export function markdownToEditorHtml(markdown = "") {
-  const withCards = cardLines(markdown).replace(TOKEN_LINE, (_, kind, slug) => `<div data-card="${kind}" data-slug="${slug}"></div>`);
+  const withCards = cardLines(markdown).replace(
+    TOKEN_LINE,
+    (_, kind, slug) => `<div data-card="${kind}" data-slug="${slug}"></div>`,
+  );
   return marked.parse(withCards);
 }
 
 let service;
 function turndown() {
   if (service) return service;
-  service = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", codeBlockStyle: "fenced", emDelimiter: "*", strongDelimiter: "**" });
+  service = new TurndownService({
+    headingStyle: "atx",
+    bulletListMarker: "-",
+    codeBlockStyle: "fenced",
+    emDelimiter: "*",
+    strongDelimiter: "**",
+  });
   service.addRule("card", {
     filter: (node) => node.nodeName === "DIV" && node.hasAttribute("data-card"),
     replacement: (_, node) => `\n\n{{${node.getAttribute("data-card")}:${node.getAttribute("data-slug")}}}\n\n`,
@@ -29,8 +38,13 @@ function turndown() {
     replacement(content, node) {
       const parent = node.parentNode;
       const marker =
-        parent.nodeName === "OL" ? `${(Number(parent.getAttribute("start")) || 1) + Array.prototype.indexOf.call(parent.children, node)}. ` : "- ";
-      const text = content.replace(/^\n+/, "").replace(/\s+$/, "").replace(/\n(?=[^\n])/g, "\n  ");
+        parent.nodeName === "OL"
+          ? `${(Number(parent.getAttribute("start")) || 1) + Array.prototype.indexOf.call(parent.children, node)}. `
+          : "- ";
+      const text = content
+        .replace(/^\n+/, "")
+        .replace(/\s+$/, "")
+        .replace(/\n(?=[^\n])/g, "\n  ");
       return marker + text + (node.nextSibling ? "\n" : "");
     },
   });

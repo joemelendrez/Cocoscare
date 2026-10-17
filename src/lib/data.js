@@ -37,7 +37,12 @@ function toCard(row) {
 async function supabasePosts(limit, category) {
   const db = publicClient();
   if (!db) return null;
-  let query = db.from("posts").select(POST_FIELDS).eq("status", "published").order("published_at", { ascending: false }).limit(limit);
+  let query = db
+    .from("posts")
+    .select(POST_FIELDS)
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .limit(limit);
   if (category) query = query.eq("category", category);
   const { data, error } = await query;
   if (error) {
@@ -161,8 +166,17 @@ export async function getPost(slug) {
 export async function getPostSlugs() {
   const db = publicClient();
   const [own, wp] = await Promise.all([
-    db ? db.from("posts").select("slug, updated_at, wordpress_id").eq("status", "published").then(({ data }) => data || []) : [],
+    db
+      ? db
+          .from("posts")
+          .select("slug, updated_at, wordpress_id")
+          .eq("status", "published")
+          .then(({ data }) => data || [])
+      : [],
     wordpressConfigured ? getWordpressPosts() : [],
   ]);
-  return [...own.map((p) => ({ slug: p.slug, updated_at: p.updated_at })), ...wp.filter(notCopied(own)).map((p) => ({ slug: p.slug, updated_at: p.updated_at }))];
+  return [
+    ...own.map((p) => ({ slug: p.slug, updated_at: p.updated_at })),
+    ...wp.filter(notCopied(own)).map((p) => ({ slug: p.slug, updated_at: p.updated_at })),
+  ];
 }

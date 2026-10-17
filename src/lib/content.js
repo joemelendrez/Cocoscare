@@ -19,6 +19,7 @@ export const NAV = [
   { href: "/", label: "Home", color: "pink" },
   { href: "/blog", label: "Blog", color: "butter" },
   { href: "/shop", label: "Shop", color: "periwinkle" },
+  { href: "/tools", label: "Tools", color: "pink" },
   { href: "/about", label: "About", color: "mint" },
 ];
 

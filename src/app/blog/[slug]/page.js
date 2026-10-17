@@ -15,13 +15,8 @@ import { withHeadingIds } from "@/lib/postHeadings";
 import { mailchimpConfigured } from "@/lib/mailchimp";
 import { instacartConfigured } from "@/lib/instacart";
 import { resendConfigured } from "@/lib/resend";
+import { walmartAffiliateLink } from "@/lib/walmart";
 import { recipeSchema } from "@/lib/recipe";
-
-// Walmart's affiliate link (from Impact), wrapped around each "Walmart"
-// search link on recipe cards. Only goto.walmart.com links are used.
-const WALMART_LINK = /^https:\/\/goto\.walmart\.com\/c\/[\w/]+$/.test(process.env.WALMART_AFFILIATE_LINK || "")
-  ? process.env.WALMART_AFFILIATE_LINK
-  : null;
 
 export const revalidate = 60;
 
@@ -105,7 +100,7 @@ export default async function PostPage({ params }) {
         })}`
       : pinUrl;
   const emailFrom = resendConfigured ? { slug: post.slug, listOpen: mailchimpConfigured } : null;
-  const shop = { slug: post.slug, instacart: instacartConfigured, walmartLink: WALMART_LINK };
+  const shop = { slug: post.slug, instacart: instacartConfigured, walmartLink: walmartAffiliateLink() };
 
   return (
     <article id="post">
