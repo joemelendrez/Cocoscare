@@ -235,7 +235,7 @@ export default function MealPlanner({ recipes = [] }) {
         <button
           type="button"
           onClick={fillWeek}
-          className="rounded-full border-[2.5px] border-ink bg-butter px-5 py-2 font-display text-lg tracking-wide shadow-[3px_3px_0_var(--ink)]"
+          className="rounded-full border-[2.5px] border-ink bg-butter px-5 py-2 font-display text-lg tracking-wide shadow-[3px_3px_0_var(--shadow)]"
         >
           🎲 Fill my week
         </button>
@@ -279,7 +279,7 @@ export default function MealPlanner({ recipes = [] }) {
         {DAYS.map((day, d) => (
           <li
             key={day}
-            className="flex flex-col overflow-hidden rounded-[1.5rem] border-[3px] border-ink bg-paper shadow-[4px_4px_0_var(--ink)] print:shadow-none"
+            className="flex flex-col overflow-hidden rounded-[1.5rem] border-[3px] border-ink bg-paper shadow-[4px_4px_0_var(--shadow)] print:shadow-none"
           >
             <h2 className={`border-b-[3px] border-ink px-4 py-2 font-display text-xl tracking-wide ${COLORS[d]}`}>{day}</h2>
             <div className="flex flex-1 flex-col gap-2 p-3">
@@ -314,7 +314,7 @@ export default function MealPlanner({ recipes = [] }) {
                 <p className="text-sm font-bold">Added {sent} items ✓</p>
                 <Link
                   href="/tools/grocery-list"
-                  className="mt-2 inline-block rounded-full border-[2.5px] border-ink bg-paper px-4 py-2 font-display tracking-wide shadow-[3px_3px_0_var(--ink)]"
+                  className="mt-2 inline-block rounded-full border-[2.5px] border-ink bg-paper px-4 py-2 font-display tracking-wide shadow-[3px_3px_0_var(--shadow)]"
                 >
                   Open my grocery list →
                 </Link>
@@ -325,7 +325,7 @@ export default function MealPlanner({ recipes = [] }) {
                 type="button"
                 onClick={sendToList}
                 disabled={!chosen.length}
-                className="mt-4 rounded-full border-[2.5px] border-ink bg-paper px-5 py-2 font-display text-lg tracking-wide shadow-[3px_3px_0_var(--ink)] disabled:opacity-50"
+                className="mt-4 rounded-full border-[2.5px] border-ink bg-paper px-5 py-2 font-display text-lg tracking-wide shadow-[3px_3px_0_var(--shadow)] disabled:opacity-50"
               >
                 Add to my grocery list
               </motion.button>

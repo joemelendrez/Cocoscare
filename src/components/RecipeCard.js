@@ -256,7 +256,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
             aria-controls={id ? `${id}-body` : undefined}
-            className="rounded-full border-[2.5px] border-ink bg-butter px-5 py-2 font-display text-lg tracking-wide text-ink shadow-[3px_3px_0_var(--ink)]"
+            className="rounded-full border-[2.5px] border-ink bg-butter px-5 py-2 font-display text-lg tracking-wide text-ink shadow-[3px_3px_0_var(--shadow)]"
           >
             {open ? "Hide recipe ▴" : "Show full recipe ▾"}
           </button>
@@ -265,7 +265,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
               type="button"
               onClick={() => togglePanel("shop")}
               aria-expanded={panel === "shop"}
-              className={`rounded-full border-[2.5px] border-ink px-5 py-2 font-display text-lg tracking-wide text-ink shadow-[3px_3px_0_var(--ink)] ${panel === "shop" ? "bg-paper" : "bg-mint"}`}
+              className={`rounded-full border-[2.5px] border-ink px-5 py-2 font-display text-lg tracking-wide text-ink shadow-[3px_3px_0_var(--shadow)] ${panel === "shop" ? "bg-paper" : "bg-mint"}`}
             >
               Shop ingredients
             </button>

@@ -13,6 +13,7 @@
   --periwinkle: #7d93e8;
   --butter: #ffcb47;
   --mint: #73dfbf;
+  --shadow: #161016;
 }
 
 /* Dark mode: the same sticker look flipped. Pages and cards go a deep
@@ -26,6 +27,7 @@
   --blush: #2b1b2c;
   --pink-soft: #4d1b3d;
   --pink-deep: #ff7cc6;
+  --shadow: #070408;
   color-scheme: dark;
 }
 
@@ -36,6 +38,7 @@
   --blush: #fff2f9;
   --pink-soft: #ffd2ec;
   --pink-deep: #d1007c;
+  --shadow: #161016;
   color-scheme: light;
 }
 
@@ -96,6 +99,12 @@ body {
   overflow-x: clip;
 }
 
+/* In dark mode the page sits a shade deeper than the cards on it, so
+   cards read as raised instead of cut out of the same plum. */
+[data-theme="dark"] body {
+  background: #150e17;
+}
+
 ::selection {
   background: var(--pink);
   color: var(--paper);
@@ -105,12 +114,12 @@ body {
    grows when the thing is hovered, like it's lifting off the page. */
 @utility sticker {
   border: 3px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--shadow);
 }
 
 @utility sticker-sm {
   border: 2.5px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--shadow);
 }
 
 @utility lift {
@@ -119,11 +128,11 @@ body {
     box-shadow 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   &:hover {
     transform: translate(-3px, -3px) rotate(-1deg);
-    box-shadow: 8px 8px 0 var(--ink);
+    box-shadow: 8px 8px 0 var(--shadow);
   }
   &:active {
     transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0 var(--ink);
+    box-shadow: 2px 2px 0 var(--shadow);
   }
 }
 

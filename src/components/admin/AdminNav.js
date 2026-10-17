@@ -108,7 +108,7 @@ export default function AdminNav({ pathname, email, onSignOut }) {
                 {active && (
                   <motion.span
                     layoutId="admin-side-blob"
-                    className="absolute inset-0 -rotate-1 rounded-[1.25rem] border-[2.5px] border-ink bg-pink-soft shadow-[3px_3px_0_var(--ink)]"
+                    className="absolute inset-0 -rotate-1 rounded-[1.25rem] border-[2.5px] border-ink bg-pink-soft shadow-[3px_3px_0_var(--shadow)]"
                     transition={JELLY}
                   />
                 )}

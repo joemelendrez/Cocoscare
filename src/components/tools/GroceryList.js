@@ -274,7 +274,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.15fr]">
-        <div className="rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--ink)] sm:p-6">
+        <div className="rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--shadow)] sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-2xl tracking-wide">{mode === "build" ? "Make your list" : "Paste your list"}</h2>
             <div
@@ -330,7 +330,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                 <button
                   type="submit"
                   disabled={!entry.trim()}
-                  className="shrink-0 rounded-full border-[2.5px] border-ink bg-pink px-5 font-display text-lg tracking-wide text-paper shadow-[3px_3px_0_var(--ink)] disabled:opacity-50"
+                  className="shrink-0 rounded-full border-[2.5px] border-ink bg-pink px-5 font-display text-lg tracking-wide text-paper shadow-[3px_3px_0_var(--shadow)] disabled:opacity-50"
                 >
                   Add
                 </button>
@@ -457,7 +457,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                     type="button"
                     onClick={sendToInstacart}
                     disabled={sending || !left.length}
-                    className="rounded-full border-[2.5px] border-ink bg-mint px-5 py-2 font-display text-lg tracking-wide shadow-[3px_3px_0_var(--ink)] disabled:opacity-60"
+                    className="rounded-full border-[2.5px] border-ink bg-mint px-5 py-2 font-display text-lg tracking-wide shadow-[3px_3px_0_var(--shadow)] disabled:opacity-60"
                   >
                     {sending ? "Building your cart…" : "Send to Instacart"}
                   </button>

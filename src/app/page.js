@@ -65,7 +65,7 @@ export default async function Home() {
 
       <section className="relative overflow-hidden py-24 sm:py-32">
         <Parallax speed={120} className="absolute left-[6%] top-10">
-          <Cookie className="h-16 w-16 drop-shadow-[3px_3px_0_var(--ink)]" />
+          <Cookie className="h-16 w-16 drop-shadow-[3px_3px_0_var(--shadow)]" />
         </Parallax>
         <Parallax speed={-90} rotate={20} className="absolute right-[8%] top-24">
           <Star className="h-14 w-14" />

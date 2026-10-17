@@ -36,7 +36,7 @@ export default function ShopRecipe({ slug, recipeId, anchor, ingredients, scale,
               href={instacartHref}
               target="_blank"
               rel="noopener sponsored"
-              className="flex items-center justify-between gap-3 rounded-2xl border-[2.5px] border-ink bg-mint px-4 py-3 shadow-[3px_3px_0_var(--ink)]"
+              className="flex items-center justify-between gap-3 rounded-2xl border-[2.5px] border-ink bg-mint px-4 py-3 shadow-[3px_3px_0_var(--shadow)]"
             >
               <span>
                 <span className="block font-display text-lg tracking-wide">Get it delivered with Instacart</span>

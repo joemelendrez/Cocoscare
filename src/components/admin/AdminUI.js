@@ -41,7 +41,7 @@ export function Select({ options, className = "", ...props }) {
 }
 
 const BUTTON = {
-  primary: "border-ink bg-pink text-paper shadow-[3px_3px_0_var(--ink)] hover:-translate-y-0.5",
+  primary: "border-ink bg-pink text-paper shadow-[3px_3px_0_var(--shadow)] hover:-translate-y-0.5",
   dark: "border-ink bg-ink text-paper shadow-[3px_3px_0_var(--pink)] hover:-translate-y-0.5",
   ghost: "border-ink bg-paper hover:bg-blush",
   danger: "border-pink-deep bg-paper text-pink-deep hover:bg-pink-soft",

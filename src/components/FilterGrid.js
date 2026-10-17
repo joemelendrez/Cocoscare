@@ -21,7 +21,7 @@ function Chips({ options, value, onChange, label }) {
             {active && (
               <motion.span
                 layoutId={`chip-${label}`}
-                className="absolute inset-[-2.5px] rounded-full border-[2.5px] border-ink bg-pink shadow-[3px_3px_0_var(--ink)]"
+                className="absolute inset-[-2.5px] rounded-full border-[2.5px] border-ink bg-pink shadow-[3px_3px_0_var(--shadow)]"
                 transition={{ type: "spring", stiffness: 420, damping: 22 }}
               />
             )}

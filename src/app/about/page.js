@@ -57,7 +57,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-y-[3px] border-ink bg-ink py-16">
+      <section className="ink-band border-y-[3px] border-ink bg-ink py-16">
         <Stagger className="mx-auto grid max-w-4xl gap-6 px-5 sm:grid-cols-3">
           {FACTS.map((f, i) => (
             <StaggerItem key={f.small} tilt={[-2, 1.5, -1][i]}>
