@@ -1,11 +1,12 @@
 import Link from "next/link";
 import PageHero from "@/components/PageHero";
-import { GroceryBag } from "@/components/Doodles";
+import { GroceryBag, KiteDoodle, MeasuringCup, PlannerDoodle } from "@/components/Doodles";
 import { Reveal } from "@/components/Motion";
 
 export const metadata = {
   title: "Free Tools for Busy Moms",
-  description: "Free little helpers from Coco's Care: a grocery list you can paste and shop in one tap, and more on the way.",
+  description:
+    "Free little helpers from Coco's Care: a grocery list, a meal planner, a kitchen converter and a boredom buster for the kids.",
   alternates: { canonical: "/tools" },
 };
 
@@ -18,6 +19,27 @@ const TOOLS = [
       "Paste your list or add a recipe. It sorts by aisle, then send it to Instacart, search it at Walmart, or tick it off in the store.",
     color: "bg-mint",
     Icon: GroceryBag,
+  },
+  {
+    href: "/tools/meal-planner",
+    title: "Meal planner",
+    blurb: "Plan the week's dinners, fill empty nights with easy recipes, and send every ingredient to your grocery list.",
+    color: "bg-butter",
+    Icon: PlannerDoodle,
+  },
+  {
+    href: "/tools/kitchen-converter",
+    title: "Kitchen converter",
+    blurb: "Cups to grams, °F to °C, and any recipe doubled or halved in one go.",
+    color: "bg-periwinkle",
+    Icon: MeasuringCup,
+  },
+  {
+    href: "/tools/boredom-buster",
+    title: "Boredom buster",
+    blurb: "Pick an age and inside or out, and get an easy activity with what you need and how to do it.",
+    color: "bg-blush",
+    Icon: KiteDoodle,
   },
 ];
 

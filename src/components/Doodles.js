@@ -101,6 +101,57 @@ export function GroceryBag({ className }) {
   );
 }
 
+// The Meal Planner's icon: a week calendar with a heart on today.
+export function PlannerDoodle({ className }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <rect x="7" y="11" width="50" height="47" rx="7" fill="var(--paper)" {...STROKE} />
+      <path d="M7 18a7 7 0 0 1 7-7h36a7 7 0 0 1 7 7v7H7Z" fill="var(--pink)" {...STROKE} />
+      <path d="M20 6v10M44 6v10" fill="none" {...STROKE} strokeWidth="4" />
+      {[0, 1, 2].flatMap((row) =>
+        [0, 1, 2, 3].map((col) =>
+          row === 1 && col === 2 ? null : (
+            <rect key={`${row}-${col}`} x={13 + col * 10.5} y={30 + row * 8.5} width="6" height="5" rx="1.5" fill="var(--ink)" opacity=".25" />
+          ),
+        ),
+      )}
+      <path
+        d="M37 47c-4-2.7-5.7-4.7-5.7-6.9 0-1.6 1.3-2.8 2.8-2.8 1.2 0 2.2.7 2.9 1.8.7-1.1 1.7-1.8 2.9-1.8 1.5 0 2.8 1.2 2.8 2.8 0 2.2-1.7 4.2-5.7 6.9Z"
+        fill="var(--pink)"
+        {...STROKE}
+        strokeWidth="2.2"
+      />
+    </svg>
+  );
+}
+
+// The Kitchen Converter's icon: a measuring cup with its lines.
+export function MeasuringCup({ className }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <path d="M48 24h4a7 7 0 0 1 7 7v6a7 7 0 0 1-7 7h-5" fill="none" {...STROKE} strokeWidth="4" />
+      <path d="M10 12h40l-3 44a4 4 0 0 1-4 3.7H17a4 4 0 0 1-4-3.7Z" fill="var(--periwinkle)" {...STROKE} />
+      <path d="M12.6 34h35.8l-1.4 22a4 4 0 0 1-4 3.7H18a4 4 0 0 1-4-3.7Z" fill="var(--butter)" {...STROKE} />
+      <path d="M38 20h7M40 27h5M38 34h7M40 41h5M38 48h7" fill="none" stroke="var(--ink)" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M17 18c0 6 .5 10 1 13" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".8" />
+    </svg>
+  );
+}
+
+// The Boredom Buster's icon: a kite on a wiggly string.
+export function KiteDoodle({ className }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <path d="M33 4 54 22 37 44 14 26Z" fill="var(--butter)" {...STROKE} />
+      <path d="M33 4 37 44M14 26l40-4" fill="none" {...STROKE} strokeWidth="2.5" />
+      <path d="M33 4 54 22 35.5 23Z" fill="var(--pink)" {...STROKE} strokeWidth="2.5" />
+      <path d="M14 26l21.5-3 1.5 21Z" fill="var(--mint)" {...STROKE} strokeWidth="2.5" />
+      <path d="M37 44c-4 4 2 6-2 10s-8 1-11 6" fill="none" {...STROKE} strokeWidth="2.5" />
+      <path d="M32 50.5l-4-2 1 4ZM26 58l-4-1 2 3.5Z" fill="var(--periwinkle)" {...STROKE} strokeWidth="2" />
+    </svg>
+  );
+}
+
 // Category icons, drawn on a white bubble.
 export function CategoryIcon({ name, className }) {
   const common = { fill: "none", ...STROKE };
