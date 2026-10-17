@@ -123,33 +123,63 @@ export const SHOP_SECTIONS = [
   { key: "outings", label: "On the Go" },
 ];
 
-// `url` stays null until Coco adds her affiliate link; the card then shows
-// "Link coming soon" instead of a dead button.
+// Placeholder picks with real Amazon search links (tagged at render time by
+// withTaggedUrl too). Swap in Coco's own favorites from /admin.
 export const SAMPLE_PICKS = [
   {
-    name: "Floor seat with tray",
+    name: "Bumbo Floor Seat with Play Tray",
     section: "baby",
-    note: "Bought it for a nanny family, then for us.",
+    note: "Holds them upright for tummy-time breaks, tray snaps on for snacks.",
     color: "periwinkle",
-    url: null,
+    url: "https://www.amazon.com/s?k=Bumbo+Floor+Seat+with+Play+Tray&tag=joseph0f30b-20",
   },
   {
-    name: "Silicone suction plates",
+    name: "ezpz Happy Mat",
     section: "toddler",
-    note: "The only plates that survived the throw phase.",
+    note: "Plate and placemat in one that suctions to the table.",
     color: "mint",
-    url: null,
+    url: "https://www.amazon.com/s?k=ezpz+Happy+Mat&tag=joseph0f30b-20",
   },
-  { name: "Mini muffin tin", section: "kitchen", note: "Toddler-sized everything. Used weekly.", color: "butter", url: null },
-  { name: "Ribbed crop tee", section: "mom", note: "Soft, cute, hides spit-up. Have it in 4 colors.", color: "pink", url: null },
   {
-    name: "Backpack diaper bag",
-    section: "outings",
-    note: "Hands free, wipeable, a pocket for everything.",
-    color: "periwinkle",
-    url: null,
+    name: "Wilton Mini Muffin Pan, 24 Cup",
+    section: "kitchen",
+    note: "Toddler-sized muffins, egg bites and frozen yogurt bites.",
+    color: "butter",
+    url: "https://www.amazon.com/s?k=Wilton+mini+muffin+pan+24+cup&tag=joseph0f30b-20",
   },
-  { name: "Snack spinner cups", section: "toddler", note: "Fewer crushed crackers in the car seat.", color: "butter", url: null },
-  { name: "Swaddle blankets", section: "baby", note: "Burp cloth, nursing cover, stroller shade.", color: "mint", url: null },
-  { name: "Joggers with pockets", section: "mom", note: "Phone, keys, pacifier. Real pockets.", color: "pink", url: null },
+  {
+    name: "Owala FreeSip Water Bottle",
+    section: "mom",
+    note: "Sip or swig, one hand, and it does not leak in the diaper bag.",
+    color: "pink",
+    url: "https://www.amazon.com/s?k=Owala+FreeSip+water+bottle&tag=joseph0f30b-20",
+  },
+  {
+    name: "Itzy Ritzy Dream Backpack Diaper Bag",
+    section: "outings",
+    note: "Hands free, wipeable, with insulated bottle pockets.",
+    color: "periwinkle",
+    url: "https://www.amazon.com/s?k=Itzy+Ritzy+Dream+Backpack+diaper+bag&tag=joseph0f30b-20",
+  },
+  {
+    name: "Munchkin Snack Catcher",
+    section: "toddler",
+    note: "Soft flaps let little hands in and keep the crackers from spilling.",
+    color: "butter",
+    url: "https://www.amazon.com/s?k=Munchkin+Snack+Catcher&tag=joseph0f30b-20",
+  },
+  {
+    name: "aden + anais Muslin Swaddles",
+    section: "baby",
+    note: "Breathable muslin: swaddle, burp cloth, nursing cover, stroller shade.",
+    color: "mint",
+    url: "https://www.amazon.com/s?k=aden+anais+muslin+swaddle+blankets+4+pack&tag=joseph0f30b-20",
+  },
+  {
+    name: "Kindle Paperwhite",
+    section: "mom",
+    note: "One-handed reading during night feeds, no bright screen.",
+    color: "pink",
+    url: "https://www.amazon.com/s?k=Kindle+Paperwhite&tag=joseph0f30b-20",
+  },
 ];
