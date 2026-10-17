@@ -166,3 +166,56 @@ export async function getPostSlugs() {
   ]);
   return [...own.map((p) => ({ slug: p.slug, updated_at: p.updated_at })), ...wp.filter(notCopied(own)).map((p) => ({ slug: p.slug, updated_at: p.updated_at }))];
 }
+
+// Every published recipe for the Grocery List tool's recipe search, with
+// a link to its card in the newest post that has it. A recipe that isn't
+// in any post yet has no link.
+export async function getRecipeList() {
+  const db = publicClient();
+  if (!db) return [];
+  const [{ data: recipes, error }, { data: posts }, wp] = await Promise.all([
+    db
+      .from("recipes")
+      .select("id, slug, title, summary, image_url, servings, prep_minutes, cook_minutes, ingredients")
+      .eq("status", "published")
+      .order("updated_at", { ascending: false })
+      .limit(300),
+    db
+      .from("posts")
+      .select("slug, body, recipe_id, wordpress_id, published_at")
+      .eq("status", "published")
+      .order("published_at", { ascending: false }),
+    wordpressConfigured ? getWordpressPosts(100, { withContent: true }) : null,
+  ]);
+  if (error) {
+    console.error("getRecipeList failed", error.message);
+    return [];
+  }
+  // Cards get #recipe, #recipe-2, ... in page order, with the attached
+  // recipe last when it isn't in the post too (as the post page does).
+  const published = new Set(recipes.map((r) => r.slug));
+  const own = posts || [];
+  const home = new Map();
+  const place = (postSlug, slugs) =>
+    slugs
+      .filter((s) => published.has(s))
+      .forEach((s, i) => home.has(s) || home.set(s, `/blog/${postSlug}#${i ? `recipe-${i + 1}` : "recipe"}`));
+  for (const p of own) {
+    const attached = recipes.find((r) => r.id === p.recipe_id)?.slug;
+    const inBody = recipeSlugsIn(p.body || "");
+    place(p.slug, attached && !inBody.includes(attached) ? [...inBody, attached] : inBody);
+  }
+  for (const p of (wp || []).filter(notCopied(own))) place(p.slug, recipeSlugsIn(p.html || ""));
+  return recipes.map((r) => ({
+    slug: r.slug,
+    title: r.title,
+    summary: r.summary || "",
+    image_url: r.image_url,
+    servings: r.servings,
+    minutes: (r.prep_minutes || 0) + (r.cook_minutes || 0),
+    ingredients: (r.ingredients || [])
+      .filter((i) => i?.item)
+      .map((i) => ({ amount: i.amount ?? null, unit: i.unit || "", item: i.item })),
+    href: home.get(r.slug) || null,
+  }));
+}

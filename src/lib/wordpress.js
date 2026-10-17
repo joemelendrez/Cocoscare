@@ -88,9 +88,9 @@ function toPost(node, withContent = false) {
 }
 
 // Newest published posts (WPGraphQL caps a page at 100).
-export async function getWordpressPosts(first = 100) {
+export async function getWordpressPosts(first = 100, { withContent = false } = {}) {
   const data = await query(`query Posts($first: Int) { posts(first: $first, where: { status: PUBLISH }) { nodes { content ${FIELDS} } } }`, { first });
-  return (data?.posts?.nodes || []).map((n) => toPost(n));
+  return (data?.posts?.nodes || []).map((n) => toPost(n, withContent));
 }
 
 export async function getWordpressPost(slug) {
