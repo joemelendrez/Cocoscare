@@ -13,7 +13,9 @@ import { getPost, getPostSlugs, readingMinutes } from "@/lib/data";
 import { bodySegments, faqSchema } from "@/lib/postBody";
 import { withHeadingIds } from "@/lib/postHeadings";
 import { mailchimpConfigured } from "@/lib/mailchimp";
+import { instacartConfigured } from "@/lib/instacart";
 import { resendConfigured } from "@/lib/resend";
+import { walmartAffiliateLink } from "@/lib/walmart";
 import { recipeSchema } from "@/lib/recipe";
 
 export const revalidate = 60;
@@ -98,6 +100,7 @@ export default async function PostPage({ params }) {
         })}`
       : pinUrl;
   const emailFrom = resendConfigured ? { slug: post.slug, listOpen: mailchimpConfigured } : null;
+  const shop = { slug: post.slug, instacart: instacartConfigured, walmartLink: walmartAffiliateLink() };
 
   return (
     <article id="post">
@@ -193,7 +196,13 @@ export default async function PostPage({ params }) {
                 </div>
               ) : s.type === "recipe" ? (
                 <div key={i} className="py-6">
-                  <RecipeCard recipe={s.recipe} pinUrl={recipePinUrl(s.recipe)} anchor={s.anchorId} emailFrom={emailFrom} />
+                  <RecipeCard
+                    recipe={s.recipe}
+                    pinUrl={recipePinUrl(s.recipe)}
+                    anchor={s.anchorId}
+                    emailFrom={emailFrom}
+                    shop={shop}
+                  />
                 </div>
               ) : (
                 <div key={i} className="post-body">
@@ -212,6 +221,7 @@ export default async function PostPage({ params }) {
             pinUrl={recipePinUrl(post.recipe)}
             anchor={endRecipe?.id ?? false}
             emailFrom={emailFrom}
+            shop={shop}
           />
         </div>
       )}

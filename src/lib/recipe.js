@@ -105,7 +105,7 @@ export function recipeSchema(recipe, { url, author, published } = {}) {
 }
 
 const UNITS = new Set(
-  "cup cups c tbsp tablespoon tablespoons tsp teaspoon teaspoons oz ounce ounces lb lbs pound pounds g gram grams kg ml l liter liters quart quarts pint pints pinch dash can cans clove cloves stick sticks slice slices package packages pkg bunch handful".split(
+  "cup cups c tbsp tablespoon tablespoons tsp teaspoon teaspoons oz ounce ounces lb lbs pound pounds g gram grams kg ml l liter liters quart quarts gallon gallons pint pints pinch dash can cans clove cloves stick sticks slice slices package packages pkg bunch handful".split(
     " ",
   ),
 );

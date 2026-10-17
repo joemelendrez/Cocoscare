@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Heart, Sparkle } from "@/components/Doodles";
 import RecipeEmail from "@/components/RecipeEmail";
+import ShopRecipe from "@/components/ShopRecipe";
 import { formatAmount, formatClock, formatMinutes } from "@/lib/recipe";
 
 // Two soft chimes, made with Web Audio so there's no sound file to load.
@@ -38,6 +39,10 @@ function longLabel(t, left, total) {
   if (t?.done) return "Done";
   return formatMinutes(Math.ceil((t ? left : total) / 60)) + (t ? " left" : "");
 }
+
+// The smaller second row of card buttons (Print, Email, Pin, Cook mode).
+const PILL =
+  "rounded-full border-2 border-ink bg-paper px-3 py-1 text-sm font-semibold text-ink transition-colors hover:bg-blush";
 
 function Stat({ label, value }) {
   if (!value) return null;
@@ -185,8 +190,9 @@ function useWakeLock() {
 // `anchor` is the card's id for "Jump to recipe" (true = "recipe"); a post
 // with several recipes gives each its own (recipe, recipe-2, ...).
 // `emailFrom` ({ slug, listOpen }) turns on "Email me this" once recipe
-// emails are set up; `pinUrl` saves this recipe's own pin.
-export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom }) {
+// emails are set up; `pinUrl` saves this recipe's own pin. `shop`
+// ({ slug, instacart, walmartLink }) turns on "Shop ingredients".
+export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, shop }) {
   const steps = recipe.steps || [];
   const ingredients = recipe.ingredients || [];
   const base = recipe.servings || 1;
@@ -199,8 +205,11 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom })
   // Cards start closed to save scrolling; "Jump to recipe" (a #id link)
   // opens the card it lands on, including on a page loaded with that hash.
   const [open, setOpen] = useState(false);
-  const [emailing, setEmailing] = useState(false);
+  // One panel under the buttons at a time: "email", "shop" or null.
+  const [panel, setPanel] = useState(null);
+  const togglePanel = (name) => setPanel((p) => (p === name ? null : name));
   const canEmail = Boolean(emailFrom?.slug && recipe.id);
+  const canShop = Boolean(shop?.slug && recipe.id && ingredients.some((i) => i?.item));
   useEffect(() => {
     if (!id) return;
     const check = () => window.location.hash === `#${id}` && setOpen(true);
@@ -247,56 +256,68 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom })
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
             aria-controls={id ? `${id}-body` : undefined}
-            className="rounded-full border-[2.5px] border-ink bg-butter px-4 py-1.5 font-display tracking-wide text-ink shadow-[3px_3px_0_var(--ink)]"
+            className="rounded-full border-[2.5px] border-ink bg-butter px-5 py-2 font-display text-lg tracking-wide text-ink shadow-[3px_3px_0_var(--ink)]"
           >
             {open ? "Hide recipe ▴" : "Show full recipe ▾"}
           </button>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="rounded-full border-[2.5px] border-ink bg-paper px-4 py-1.5 font-display tracking-wide text-ink"
-          >
+          {canShop && (
+            <button
+              type="button"
+              onClick={() => togglePanel("shop")}
+              aria-expanded={panel === "shop"}
+              className={`rounded-full border-[2.5px] border-ink px-5 py-2 font-display text-lg tracking-wide text-ink shadow-[3px_3px_0_var(--ink)] ${panel === "shop" ? "bg-paper" : "bg-mint"}`}
+            >
+              Shop ingredients
+            </button>
+          )}
+        </div>
+        <div className="no-print mt-3 flex flex-wrap gap-1.5">
+          <button type="button" onClick={() => window.print()} className={PILL}>
             Print
           </button>
           {canEmail && (
             <button
               type="button"
-              onClick={() => setEmailing((v) => !v)}
-              aria-expanded={emailing}
-              className="rounded-full border-[2.5px] border-ink bg-paper px-4 py-1.5 font-display tracking-wide text-ink"
+              onClick={() => togglePanel("email")}
+              aria-expanded={panel === "email"}
+              className={`${PILL} ${panel === "email" ? "!bg-butter" : ""}`}
             >
-              Email me this
+              Email it
             </button>
           )}
           {pinUrl && (
-            <a
-              href={pinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border-[2.5px] border-ink bg-ink px-4 py-1.5 font-display tracking-wide text-paper"
-            >
-              Save to Pinterest
+            <a href={pinUrl} target="_blank" rel="noopener noreferrer" className={PILL}>
+              Pin it
             </a>
           )}
           {wake.supported && (
-            <button
-              type="button"
-              onClick={wake.toggle}
-              aria-pressed={wake.on}
-              className={`rounded-full border-[2.5px] border-ink px-4 py-1.5 font-display tracking-wide ${wake.on ? "bg-mint text-ink" : "bg-paper/20 text-paper"}`}
-            >
-              {wake.on ? "Cook mode on: screen stays awake" : "Cook mode"}
+            <button type="button" onClick={wake.toggle} aria-pressed={wake.on} className={`${PILL} ${wake.on ? "!bg-mint" : ""}`}>
+              {wake.on ? "Cook mode on ✓" : "Cook mode"}
             </button>
           )}
         </div>
+        {wake.on && <p className="no-print mt-2 text-sm font-medium">Your screen stays awake while you cook.</p>}
         <AnimatePresence initial={false}>
-          {canEmail && emailing && (
+          {canEmail && panel === "email" && (
             <RecipeEmail
+              key="email"
               slug={emailFrom.slug}
               recipeId={String(recipe.id)}
               anchor={id}
               listOpen={emailFrom.listOpen}
-              onClose={() => setEmailing(false)}
+              onClose={() => setPanel(null)}
+            />
+          )}
+          {canShop && panel === "shop" && (
+            <ShopRecipe
+              key="shop"
+              slug={shop.slug}
+              recipeId={String(recipe.id)}
+              anchor={id}
+              ingredients={ingredients}
+              scale={scale}
+              instacart={shop.instacart}
+              walmartLink={shop.walmartLink}
             />
           )}
         </AnimatePresence>
