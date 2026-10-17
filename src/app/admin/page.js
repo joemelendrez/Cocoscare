@@ -166,6 +166,37 @@ function FromHandoffHero() {
   );
 }
 
+// What readers save most with the heart button (counts only, never who).
+// Quiet until the accounts migration (0004) has been run.
+function MostSaved() {
+  const { supabase } = useAdmin();
+  const [rows, setRows] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    supabase.rpc("top_saves", { max_rows: 8 }).then(({ data, error }) => live && setRows(error ? [] : data || []));
+    return () => {
+      live = false;
+    };
+  }, [supabase]);
+
+  if (!rows?.length) return null;
+  return (
+    <Card title="Most saved by readers">
+      <ul className="divide-y-2 divide-ink/10">
+        {rows.map((r) => (
+          <li key={`${r.kind}:${r.ref}`} className="flex items-center gap-3 py-2.5">
+            <RowText title={r.title} sub={r.kind === "recipe" ? "Recipe" : "Post"} />
+            <a href={r.href} target="_blank" rel="noopener noreferrer" className="shrink-0 font-display text-lg tracking-wide">
+              {r.saves} ♥
+            </a>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 // New posts start in Coco's Handoff Hero account, which writes in her voice.
 const HANDOFF_HERO_NEW_POST = "https://handoffhero.com/generate";
 
@@ -196,6 +227,7 @@ export default function AdminPosts() {
       )}
     >
       <FromHandoffHero />
+      <MostSaved />
     </AdminList>
   );
 }
