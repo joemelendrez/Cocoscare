@@ -71,8 +71,7 @@ export function formatMinutes(min) {
   return m ? `${h} hr ${m} min` : `${h} hr`;
 }
 
-const iso = (min) =>
-  min ? `PT${Math.floor(min / 60) ? `${Math.floor(min / 60)}H` : ""}${min % 60 ? `${min % 60}M` : ""}` : undefined;
+const iso = (min) => (min ? `PT${Math.floor(min / 60) ? `${Math.floor(min / 60)}H` : ""}${min % 60 ? `${min % 60}M` : ""}` : undefined);
 
 export function ingredientText(ing, scale = 1) {
   const amount = ing.amount != null ? formatAmount(ing.amount * scale) : "";
@@ -131,20 +130,9 @@ export function parseIngredientLine(line) {
 export function parseStepsText(text) {
   const parts = text
     .split(/\n\s*\n|\n(?=\s*(?:\d+[.)]|step\s*\d+:?)\s)/i)
-    .map((p) =>
-      p
-        .replace(/^\s*(?:\d+[.)]|step\s*\d+:?)\s*/i, "")
-        .replace(/\s*\n\s*/g, " ")
-        .trim(),
-    )
+    .map((p) => p.replace(/^\s*(?:\d+[.)]|step\s*\d+:?)\s*/i, "").replace(/\s*\n\s*/g, " ").trim())
     .filter(Boolean);
-  const lines =
-    parts.length > 1
-      ? parts
-      : text
-          .split("\n")
-          .map((l) => l.replace(/^\s*(?:\d+[.)]|[-*•])\s*/, "").trim())
-          .filter(Boolean);
+  const lines = parts.length > 1 ? parts : text.split("\n").map((l) => l.replace(/^\s*(?:\d+[.)]|[-*•])\s*/, "").trim()).filter(Boolean);
   return lines.map((t) => ({ text: t, timer_seconds: guessTimerSeconds(t) }));
 }
 

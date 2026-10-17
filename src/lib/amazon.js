@@ -6,8 +6,7 @@
 // joseph0f30b-20 account's SiteStripe.
 export const AMAZON_TAG = process.env.NEXT_PUBLIC_AMAZON_TAG || "joseph0f30b-20";
 
-const AMAZON_HOST =
-  /^(?:www\.|smile\.)?amazon\.(?:com|ca|co\.uk|com\.au|de|fr|it|es|co\.jp|in|com\.mx|com\.br|nl|se|pl|sg|ae|sa|com\.tr|com\.be)$/i;
+const AMAZON_HOST = /^(?:www\.|smile\.)?amazon\.(?:com|ca|co\.uk|com\.au|de|fr|it|es|co\.jp|in|com\.mx|com\.br|nl|se|pl|sg|ae|sa|com\.tr|com\.be)$/i;
 
 export function isAmazonUrl(url) {
   try {

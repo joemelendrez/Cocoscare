@@ -7,21 +7,7 @@
 const URL_SETTING = process.env.WORDPRESS_GRAPHQL_URL || "https://cms.habitnova.com/cocoscare/graphql";
 export const wordpressConfigured = URL_SETTING !== "off";
 
-const ENTITIES = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  apos: "'",
-  nbsp: " ",
-  rsquo: "’",
-  lsquo: "‘",
-  rdquo: "”",
-  ldquo: "“",
-  ndash: "–",
-  mdash: "—",
-  hellip: "…",
-};
+const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“", ndash: "–", mdash: "—", hellip: "…" };
 
 // WordPress stores curly quotes and dashes as entities (&#8217;).
 export function decodeEntities(text = "") {
@@ -31,10 +17,7 @@ export function decodeEntities(text = "") {
     .replace(/&([a-z]+);/gi, (m, name) => ENTITIES[name.toLowerCase()] ?? m);
 }
 
-export const stripTags = (html = "") =>
-  decodeEntities(html.replace(/<[^>]*>/g, " "))
-    .replace(/\s+/g, " ")
-    .trim();
+export const stripTags = (html = "") => decodeEntities(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
 
 // WordPress category slugs and the blog categories they show under.
 const CATEGORY_MAP = {
@@ -106,10 +89,7 @@ function toPost(node, withContent = false) {
 
 // Newest published posts (WPGraphQL caps a page at 100).
 export async function getWordpressPosts(first = 100) {
-  const data = await query(
-    `query Posts($first: Int) { posts(first: $first, where: { status: PUBLISH }) { nodes { content ${FIELDS} } } }`,
-    { first },
-  );
+  const data = await query(`query Posts($first: Int) { posts(first: $first, where: { status: PUBLISH }) { nodes { content ${FIELDS} } } }`, { first });
   return (data?.posts?.nodes || []).map((n) => toPost(n));
 }
 
