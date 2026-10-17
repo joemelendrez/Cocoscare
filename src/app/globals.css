@@ -288,21 +288,26 @@ body {
   color: color-mix(in srgb, var(--ink) 40%, transparent);
 }
 
-/* Printing a recipe prints just the recipe card. */
+/* Printing a recipe prints just that one recipe card (.print-target, set
+   by RecipeCard before printing): everything that isn't the card or holds
+   it is taken out, so there are no blank pages after it. Other pages print
+   as they are. */
 @media print {
-  body * {
-    visibility: hidden;
+  body:has(.print-target) :not(.print-target, .print-target *, :has(.print-target)) {
+    display: none !important;
   }
-  .recipe-card,
-  .recipe-card * {
-    visibility: visible;
+  body:has(.print-target) :has(.print-target) {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: none !important;
+    max-width: none !important;
+    transform: none !important;
   }
-  .recipe-card {
-    position: absolute;
-    inset: 0 0 auto 0;
+  .recipe-card.print-target {
     box-shadow: none !important;
   }
-  .recipe-card .no-print {
+  .no-print {
     display: none !important;
   }
 }

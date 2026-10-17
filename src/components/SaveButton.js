@@ -1,10 +1,13 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { toggleSave, useSaves, useUser } from "@/lib/account";
 import { supabaseConfigured } from "@/lib/supabase";
+
+const noop = () => () => {};
 
 // Heart button that saves a recipe or post to the reader's account.
 // item: { kind: "recipe" | "post", ref, title, href?, image_url? }. Signed
@@ -14,17 +17,32 @@ export default function SaveButton({ item, small = false, className = "" }) {
   const saves = useSaves();
   const [hint, setHint] = useState("");
   const wrap = useRef(null);
-  const [shift, setShift] = useState(0);
+  const [pos, setPos] = useState(null);
+  const mounted = useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  );
 
-  // Keep the popup on screen: it sits centered under the button, then slides
-  // sideways when that would run past either edge (16px gutter).
+  // The popup lives on <body> (a recipe card's rounded corners clip anything
+  // inside it) and sits under the button, slid sideways to keep a 16px gap
+  // from both screen edges. It follows the button while the page scrolls.
   useLayoutEffect(() => {
-    if (!hint || !wrap.current) return;
-    const box = wrap.current.getBoundingClientRect();
-    const width = Math.min(240, window.innerWidth - 32);
-    const left = box.left + box.width / 2 - width / 2;
-    const fixed = Math.min(Math.max(left, 16), window.innerWidth - 16 - width);
-    setShift(fixed - left);
+    if (!hint) return;
+    const place = () => {
+      if (!wrap.current) return;
+      const box = wrap.current.getBoundingClientRect();
+      const width = Math.min(240, window.innerWidth - 32);
+      const left = Math.min(Math.max(box.left + box.width / 2 - width / 2, 16), window.innerWidth - 16 - width);
+      setPos({ top: box.bottom + 8, left, width });
+    };
+    place();
+    window.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place);
+      window.removeEventListener("resize", place);
+    };
   }, [hint]);
 
   if (!supabaseConfigured) return null;
@@ -74,40 +92,44 @@ export default function SaveButton({ item, small = false, className = "" }) {
         </motion.svg>
         {saved ? "Saved" : "Save"}
       </motion.button>
-      <AnimatePresence>
-        {hint && (
-          <motion.span
-            role="status"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            style={{ left: `calc(50% + ${shift}px)`, x: "-50%", width: "min(15rem, calc(100vw - 2rem))" }}
-            className="follow-theme absolute top-full z-20 mt-2 rounded-2xl border-[2.5px] border-ink bg-paper p-3 text-left text-sm font-semibold text-ink shadow-[3px_3px_0_var(--shadow)]"
-          >
-            {hint === "signin" ? (
-              <>
-                Sign in to save recipes and posts to your account.{" "}
-                <Link href={`/account?next=${encodeURIComponent(next)}`} className="text-pink-deep underline">
-                  Sign in →
-                </Link>
-                <button type="button" onClick={() => setHint("")} className="ml-2 text-ink/60 underline">
-                  Not now
-                </button>
-              </>
-            ) : hint === "saved" ? (
-              <>
-                Saved! Find it under{" "}
-                <Link href="/account" className="text-pink-deep underline">
-                  My account
-                </Link>
-                .
-              </>
-            ) : (
-              hint
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {hint && pos && (
+              <motion.span
+                role="status"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                style={pos}
+                className="follow-theme fixed z-[45] rounded-2xl border-[2.5px] border-ink bg-paper p-3 text-left text-sm font-semibold text-ink shadow-[3px_3px_0_var(--shadow)]"
+              >
+                {hint === "signin" ? (
+                  <>
+                    Sign in to save recipes and posts to your account.{" "}
+                    <Link href={`/account?next=${encodeURIComponent(next)}`} className="text-pink-deep underline">
+                      Sign in →
+                    </Link>
+                    <button type="button" onClick={() => setHint("")} className="ml-2 text-ink/60 underline">
+                      Not now
+                    </button>
+                  </>
+                ) : hint === "saved" ? (
+                  <>
+                    Saved! Find it under{" "}
+                    <Link href="/account" className="text-pink-deep underline">
+                      My account
+                    </Link>
+                    .
+                  </>
+                ) : (
+                  hint
+                )}
+              </motion.span>
             )}
-          </motion.span>
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </span>
   );
 }

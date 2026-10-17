@@ -41,6 +41,25 @@ function longLabel(t, left, total) {
   return formatMinutes(Math.ceil((t ? left : total) / 60)) + (t ? " left" : "");
 }
 
+// Prints one recipe card: the page's print styles show only the card marked
+// .print-target. The browser's own Print (Ctrl+P) gets the first card.
+function markPrintTarget(card) {
+  document.querySelectorAll(".recipe-card.print-target").forEach((c) => c.classList.remove("print-target"));
+  card?.classList.add("print-target");
+}
+
+function printCard(card) {
+  markPrintTarget(card);
+  window.print();
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeprint", () => {
+    if (!document.querySelector(".recipe-card.print-target")) markPrintTarget(document.querySelector(".recipe-card"));
+  });
+  window.addEventListener("afterprint", () => markPrintTarget(null));
+}
+
 // The smaller second row of card buttons (Print, Email, Pin, Cook mode).
 const PILL =
   "rounded-full border-2 border-ink bg-paper px-3 py-1 text-sm font-semibold text-ink transition-colors hover:bg-blush";
@@ -279,7 +298,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
               small
             />
           )}
-          <button type="button" onClick={() => window.print()} className={PILL}>
+          <button type="button" onClick={(e) => printCard(e.currentTarget.closest(".recipe-card"))} className={PILL}>
             Print
           </button>
           {canEmail && (
