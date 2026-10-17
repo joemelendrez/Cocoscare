@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PageHero from "@/components/PageHero";
+import { GroceryBag } from "@/components/Doodles";
 import { Reveal } from "@/components/Motion";
 
 export const metadata = {
@@ -13,9 +14,10 @@ const TOOLS = [
   {
     href: "/tools/grocery-list",
     title: "Grocery list helper",
-    blurb: "Paste the list from your notes. Send it to Instacart, search it at Walmart, or tick it off in the store.",
+    blurb:
+      "Paste your list or add a recipe. It sorts by aisle, then send it to Instacart, search it at Walmart, or tick it off in the store.",
     color: "bg-mint",
-    emoji: "🛒",
+    Icon: GroceryBag,
   },
 ];
 
@@ -34,10 +36,10 @@ export default function ToolsPage() {
                 className="group block h-full rounded-[2rem] border-[3px] border-ink bg-paper p-6 shadow-[6px_6px_0_var(--ink)] transition-transform hover:-translate-y-1 hover:rotate-[-1deg]"
               >
                 <span
-                  className={`grid h-14 w-14 place-items-center rounded-2xl border-[2.5px] border-ink text-3xl ${t.color}`}
+                  className={`grid h-16 w-16 place-items-center rounded-2xl border-[2.5px] border-ink transition-transform group-hover:rotate-[-8deg] group-hover:scale-110 ${t.color}`}
                   aria-hidden
                 >
-                  {t.emoji}
+                  <t.Icon className="h-12 w-12" />
                 </span>
                 <h2 className="mt-4 font-display text-2xl tracking-wide">{t.title}</h2>
                 <p className="mt-2 font-medium text-ink/70">{t.blurb}</p>

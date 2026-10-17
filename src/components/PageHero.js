@@ -13,7 +13,7 @@ const BG = {
 
 // Title band for inner pages: the title sinks slowly while the doodles
 // float up faster as the page scrolls.
-export default function PageHero({ eyebrow, title, children, color = "pink" }) {
+export default function PageHero({ eyebrow, title, children, color = "pink", icon }) {
   const reduce = useReducedMotion();
   const { scrollY } = useScroll();
   const titleY = useTransform(scrollY, [0, 400], [0, 80]);
@@ -39,6 +39,16 @@ export default function PageHero({ eyebrow, title, children, color = "pink" }) {
       </motion.div>
 
       <motion.div style={style({ y: titleY })} className="relative mx-auto max-w-3xl px-5 text-center">
+        {icon && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.4, rotate: -20 }}
+            animate={{ opacity: 1, scale: 1, rotate: -6 }}
+            transition={{ type: "spring", stiffness: 240, damping: 12 }}
+            className="mx-auto mb-3 w-fit"
+          >
+            <div className="animate-wiggle">{icon}</div>
+          </motion.div>
+        )}
         {eyebrow && (
           <motion.span
             initial={{ opacity: 0, y: 20, rotate: -8 }}

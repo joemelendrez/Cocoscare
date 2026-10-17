@@ -77,6 +77,30 @@ export function Squiggle({ className, color = "var(--ink)" }) {
   );
 }
 
+// The Grocery List tool's icon: a paper bag of groceries (a baguette,
+// greens and an apple) with a little heart on the front.
+export function GroceryBag({ className }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <rect x="38" y="2" width="9" height="32" rx="4.5" transform="rotate(22 42.5 18)" fill="#f1b866" {...STROKE} />
+      <path d="M41 11.5l4 1.6M39.4 16.5l4 1.6M37.8 21.5l4 1.6" fill="none" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" />
+      <path d="M22 30C12 27 8 16 11 9c6 2 10 8 11 14 1-7 5-12 11-13 1 8-4 16-11 20Z" fill="#4cc38a" {...STROKE} />
+      <path d="M22 29c-2-5-5-10-8-14M22 28c2-5 5-9 9-12" fill="none" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="31" cy="25" r="7.5" fill="#ff5a5f" {...STROKE} />
+      <path d="M31 17.5c0-2 1-3.5 3-4.5" fill="none" stroke="var(--ink)" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M27.5 22.5c.6-1.4 1.6-2.2 3-2.6" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M8 29h48l-3.6 29.5a3 3 0 0 1-3 2.5H14.6a3 3 0 0 1-3-2.5Z" fill="#e8c48f" {...STROKE} />
+      <path d="M8 29h48l-.9 6.5H8.9Z" fill="#d9ad6e" {...STROKE} />
+      <path
+        d="M32 55c-6-4-8.5-7-8.5-10.3 0-2.4 1.9-4.2 4.2-4.2 1.8 0 3.3 1 4.3 2.6 1-1.6 2.5-2.6 4.3-2.6 2.3 0 4.2 1.8 4.2 4.2 0 3.3-2.5 6.3-8.5 10.3Z"
+        fill="var(--pink)"
+        {...STROKE}
+        strokeWidth="2.5"
+      />
+    </svg>
+  );
+}
+
 // Category icons, drawn on a white bubble.
 export function CategoryIcon({ name, className }) {
   const common = { fill: "none", ...STROKE };
