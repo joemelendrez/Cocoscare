@@ -32,7 +32,7 @@ function Doodle({ C, cls, depth, spin, scrollY, mx, my, reduce, i }) {
       <motion.div className="h-full w-full" style={reduce ? undefined : { x: px, y: py }}>
         <motion.div className="h-full w-full" {...pop(0.5 + i * 0.08)}>
           <div className="h-full w-full animate-bob" style={{ animationDelay: `${i * 0.4}s` }}>
-            <C className="h-full w-full drop-shadow-[3px_3px_0_var(--ink)]" />
+            <C className="h-full w-full drop-shadow-[3px_3px_0_var(--shadow)]" />
           </div>
         </motion.div>
       </motion.div>

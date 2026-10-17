@@ -63,7 +63,7 @@ export default function AdminList({
             <Link
               href={newHref}
               {...(newExternal ? { target: "_blank", rel: "noopener" } : {})}
-              className="rounded-full border-[2.5px] border-ink bg-pink px-5 py-2.5 font-display tracking-wide text-paper shadow-[3px_3px_0_var(--ink)] transition-transform hover:-translate-y-0.5"
+              className="rounded-full border-[2.5px] border-ink bg-pink px-5 py-2.5 font-display tracking-wide text-paper shadow-[3px_3px_0_var(--shadow)] transition-transform hover:-translate-y-0.5"
             >
               + {newLabel}
               {newExternal && " ↗"}
@@ -107,7 +107,7 @@ export default function AdminList({
             <li key={row.id} className="flex items-center gap-2">
               <Link
                 href={`${rowHref || newHref.replace(/\/new$/, "")}/${row.id}`}
-                className="flex min-w-0 flex-1 items-center gap-4 rounded-[1.5rem] border-[3px] border-ink bg-paper p-3 pr-5 transition-transform hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--ink)]"
+                className="flex min-w-0 flex-1 items-center gap-4 rounded-[1.5rem] border-[3px] border-ink bg-paper p-3 pr-5 transition-transform hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--shadow)]"
               >
                 {render(row)}
                 <StatusPill status={row.status} />

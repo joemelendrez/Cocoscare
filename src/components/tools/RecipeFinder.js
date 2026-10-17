@@ -64,7 +64,7 @@ export default function RecipeFinder({ recipes, added, onAdd }) {
                 layout
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex overflow-hidden rounded-[1.75rem] border-[3px] border-ink bg-paper shadow-[5px_5px_0_var(--ink)] sm:flex-col"
+                className="flex overflow-hidden rounded-[1.75rem] border-[3px] border-ink bg-paper shadow-[5px_5px_0_var(--shadow)] sm:flex-col"
               >
                 <div className="dots-ink relative grid w-28 shrink-0 place-items-center border-r-[3px] border-ink bg-butter sm:aspect-[16/10] sm:w-auto sm:border-b-[3px] sm:border-r-0">
                   {r.image_url ? (
@@ -88,7 +88,7 @@ export default function RecipeFinder({ recipes, added, onAdd }) {
                       type="button"
                       onClick={() => onAdd(r)}
                       disabled={isAdded}
-                      className={`rounded-full border-[2.5px] border-ink px-4 py-1.5 font-display tracking-wide ${isAdded ? "bg-paper text-ink/60" : "bg-mint shadow-[3px_3px_0_var(--ink)]"}`}
+                      className={`rounded-full border-[2.5px] border-ink px-4 py-1.5 font-display tracking-wide ${isAdded ? "bg-paper text-ink/60" : "bg-mint shadow-[3px_3px_0_var(--shadow)]"}`}
                     >
                       {isAdded ? "Added ✓" : "Add to my list"}
                     </button>

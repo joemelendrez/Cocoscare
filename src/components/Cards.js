@@ -171,7 +171,7 @@ export function ProductEmbed({ product }) {
             href={product.url}
             target="_blank"
             rel="sponsored noopener noreferrer"
-            className="shrink-0 self-start rounded-full border-[2.5px] border-ink bg-pink px-4 py-2.5 text-center font-display tracking-wide text-paper shadow-[3px_3px_0_var(--ink)] transition-transform hover:-translate-y-0.5 sm:px-6 sm:text-lg"
+            className="shrink-0 self-start rounded-full border-[2.5px] border-ink bg-pink px-4 py-2.5 text-center font-display tracking-wide text-paper shadow-[3px_3px_0_var(--shadow)] transition-transform hover:-translate-y-0.5 sm:px-6 sm:text-lg"
           >
             {product.price_label ? `${product.price_label} · ` : ""}Check price
           </a>

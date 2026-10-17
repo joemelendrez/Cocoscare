@@ -140,7 +140,7 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
             aria-current={on ? "location" : undefined}
             className={`flex items-center gap-3 rounded-2xl border-[2.5px] py-1.5 pl-1.5 pr-3 leading-tight transition-all ${
               on
-                ? "border-ink bg-pink-soft shadow-[3px_3px_0_var(--ink)]"
+                ? "border-ink bg-pink-soft shadow-[3px_3px_0_var(--shadow)]"
                 : "border-transparent hover:border-ink/20 hover:bg-blush"
             }`}
           >
@@ -182,7 +182,7 @@ export default function TableOfContents({ headings, variant = "sidebar" }) {
                   }}
                   aria-current={on ? "location" : undefined}
                   className={`block rounded-xl border-2 px-3 py-1.5 font-display leading-tight tracking-wide transition-all ${
-                    on ? "border-ink bg-paper shadow-[2px_2px_0_var(--ink)]" : "border-transparent hover:bg-paper"
+                    on ? "border-ink bg-paper shadow-[2px_2px_0_var(--shadow)]" : "border-transparent hover:bg-paper"
                   }`}
                 >
                   {h.text}

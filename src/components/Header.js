@@ -142,7 +142,7 @@ function MenuButton({ open, onClick }) {
       aria-controls="phone-menu"
       aria-label={open ? "Close menu" : "Open menu"}
       whileTap={{ scale: 0.86 }}
-      className="relative grid h-12 w-12 place-items-center rounded-full border-[2.5px] border-ink bg-pink shadow-[3px_3px_0_var(--ink)] md:hidden"
+      className="relative grid h-12 w-12 place-items-center rounded-full border-[2.5px] border-ink bg-pink shadow-[3px_3px_0_var(--shadow)] md:hidden"
     >
       <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
         {[7, 12, 17].map((y, i) => (

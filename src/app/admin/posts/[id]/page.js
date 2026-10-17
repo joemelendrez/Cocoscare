@@ -278,7 +278,7 @@ function PostForm({ initial, rec, startRecipeId }) {
         )}
       </Card>
 
-      <div className="sticky bottom-3 z-30 space-y-3 rounded-[1.75rem] border-[3px] border-ink bg-paper p-3 shadow-[4px_4px_0_var(--ink)]">
+      <div className="sticky bottom-3 z-30 space-y-3 rounded-[1.75rem] border-[3px] border-ink bg-paper p-3 shadow-[4px_4px_0_var(--shadow)]">
         <Notice notice={rec.notice} />
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={save} disabled={!canSave || rec.saving}>

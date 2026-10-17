@@ -155,7 +155,7 @@ function ProductForm({ initial, rec }) {
         <p className="mt-2 text-sm text-ink/60">Or use &ldquo;+ Product card&rdquo; in the post editor.</p>
       </Card>
 
-      <div className="sticky bottom-3 z-30 space-y-3 rounded-[1.75rem] border-[3px] border-ink bg-paper p-3 shadow-[4px_4px_0_var(--ink)]">
+      <div className="sticky bottom-3 z-30 space-y-3 rounded-[1.75rem] border-[3px] border-ink bg-paper p-3 shadow-[4px_4px_0_var(--shadow)]">
         <Notice notice={rec.notice} />
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => rec.save(values, { message: form.status === "published" ? "Saved. It's in the shop now." : "Saved as a draft.", paths: PATHS })} disabled={!canSave || rec.saving}>

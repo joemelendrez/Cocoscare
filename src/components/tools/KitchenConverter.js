@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import PickerSheet from "@/components/tools/PickerSheet";
 import { VOLUME, WEIGHT, cToF, convertAll, fToC, readAmount, scaleLine, showAmount } from "@/lib/kitchenUnits";
 
-const CARD = "rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--ink)] sm:p-6";
+const CARD = "rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--shadow)] sm:p-6";
 const FIELD =
   "rounded-2xl border-[2.5px] border-ink bg-paper px-4 py-2.5 font-medium outline-none placeholder:text-ink/40 focus:shadow-[3px_3px_0_var(--pink)]";
 const FACTORS = [
@@ -12,6 +13,10 @@ const FACTORS = [
   [1.5, "1½×"],
   [2, "2×"],
   [3, "3×"],
+];
+const UNIT_GROUPS = [
+  { label: "Volume", options: VOLUME.map((u) => ({ value: u.key, label: u.label, hint: u.short })) },
+  { label: "Weight", options: WEIGHT.map((u) => ({ value: u.key, label: u.label, hint: u.short })) },
 ];
 const OVEN = [250, 300, 325, 350, 375, 400, 425, 450];
 const EXAMPLE = "2 cups flour\n1 tsp baking soda\n½ cup butter\n3 bananas\n2 eggs\nPinch of salt";
@@ -37,25 +42,14 @@ function Converter() {
           placeholder="1½"
           className={`${FIELD} w-24`}
         />
-        <label className="sr-only" htmlFor="conv-unit">
-          Unit
-        </label>
-        <select id="conv-unit" value={unit} onChange={(e) => setUnit(e.target.value)} className={`${FIELD} min-w-0 flex-1`}>
-          <optgroup label="Volume">
-            {VOLUME.map((u) => (
-              <option key={u.key} value={u.key}>
-                {u.label}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Weight">
-            {WEIGHT.map((u) => (
-              <option key={u.key} value={u.key}>
-                {u.label}
-              </option>
-            ))}
-          </optgroup>
-        </select>
+        <PickerSheet
+          label="Unit"
+          title="Pick a unit"
+          value={unit}
+          onChange={setUnit}
+          groups={UNIT_GROUPS}
+          className={`${FIELD} min-w-0 flex-1`}
+        />
       </div>
       {rows.length ? (
         <ul className="mt-4 grid grid-cols-2 gap-2">

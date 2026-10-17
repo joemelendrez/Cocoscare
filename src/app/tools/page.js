@@ -55,7 +55,7 @@ export default function ToolsPage() {
             <Reveal key={t.href}>
               <Link
                 href={t.href}
-                className="group block h-full rounded-[2rem] border-[3px] border-ink bg-paper p-6 shadow-[6px_6px_0_var(--ink)] transition-transform hover:-translate-y-1 hover:rotate-[-1deg]"
+                className="group block h-full rounded-[2rem] border-[3px] border-ink bg-paper p-6 shadow-[6px_6px_0_var(--shadow)] transition-transform hover:-translate-y-1 hover:rotate-[-1deg]"
               >
                 <span
                   className={`grid h-16 w-16 place-items-center rounded-2xl border-[2.5px] border-ink transition-transform group-hover:rotate-[-8deg] group-hover:scale-110 ${t.color}`}

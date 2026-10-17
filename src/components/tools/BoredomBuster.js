@@ -57,7 +57,7 @@ export default function BoredomBuster() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-      <div className="rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--ink)] sm:p-6">
+      <div className="rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--shadow)] sm:p-6">
         <h2 className="font-display text-2xl tracking-wide">Who&rsquo;s bored?</h2>
         <div className="mt-3">
           <Pills label="Age" options={AGES.map((a) => [a.key, a.label, a.sub])} value={age} onChange={reset(setAge)} />
@@ -79,7 +79,7 @@ export default function BoredomBuster() {
           type="button"
           onClick={next}
           disabled={!matches.length}
-          className="mt-6 w-full rounded-full border-[3px] border-ink bg-pink px-6 py-3 font-display text-2xl tracking-wide text-paper shadow-[4px_4px_0_var(--ink)] transition-transform active:translate-y-0.5 disabled:opacity-50"
+          className="mt-6 w-full rounded-full border-[3px] border-ink bg-pink px-6 py-3 font-display text-2xl tracking-wide text-paper shadow-[4px_4px_0_var(--shadow)] transition-transform active:translate-y-0.5 disabled:opacity-50"
         >
           {pick ? "Give me another 🎲" : "Give me an idea 🎲"}
         </button>

@@ -31,7 +31,7 @@ export default function ThemeToggle({ className = "" }) {
       whileTap={{ scale: 0.86, rotate: -20 }}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
       aria-pressed={dark}
-      className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border-[2.5px] border-ink bg-paper shadow-[3px_3px_0_var(--ink)] ${className}`}
+      className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border-[2.5px] border-ink bg-paper shadow-[3px_3px_0_var(--shadow)] ${className}`}
     >
       <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
         {dark ? (
