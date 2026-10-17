@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { toggleSave, useSaves, useUser } from "@/lib/account";
@@ -13,6 +13,20 @@ export default function SaveButton({ item, small = false, className = "" }) {
   const user = useUser();
   const saves = useSaves();
   const [hint, setHint] = useState("");
+  const wrap = useRef(null);
+  const [shift, setShift] = useState(0);
+
+  // Keep the popup on screen: it sits centered under the button, then slides
+  // sideways when that would run past either edge (16px gutter).
+  useLayoutEffect(() => {
+    if (!hint || !wrap.current) return;
+    const box = wrap.current.getBoundingClientRect();
+    const width = Math.min(240, window.innerWidth - 32);
+    const left = box.left + box.width / 2 - width / 2;
+    const fixed = Math.min(Math.max(left, 16), window.innerWidth - 16 - width);
+    setShift(fixed - left);
+  }, [hint]);
+
   if (!supabaseConfigured) return null;
   const saved = Boolean(saves?.has(`${item.kind}:${item.ref}`));
 
@@ -30,7 +44,7 @@ export default function SaveButton({ item, small = false, className = "" }) {
   const next = typeof window === "undefined" ? "/" : window.location.pathname;
 
   return (
-    <span className="relative inline-flex">
+    <span ref={wrap} className="relative inline-flex">
       <motion.button
         type="button"
         onClick={click}
@@ -67,7 +81,8 @@ export default function SaveButton({ item, small = false, className = "" }) {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="follow-theme absolute left-1/2 top-full z-20 mt-2 w-60 -translate-x-1/2 rounded-2xl border-[2.5px] border-ink bg-paper p-3 text-left text-sm font-semibold text-ink shadow-[3px_3px_0_var(--shadow)]"
+            style={{ left: `calc(50% + ${shift}px)`, x: "-50%", width: "min(15rem, calc(100vw - 2rem))" }}
+            className="follow-theme absolute top-full z-20 mt-2 rounded-2xl border-[2.5px] border-ink bg-paper p-3 text-left text-sm font-semibold text-ink shadow-[3px_3px_0_var(--shadow)]"
           >
             {hint === "signin" ? (
               <>
