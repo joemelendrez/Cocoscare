@@ -5,7 +5,7 @@ export const INK = "#161016";
 export const BAND = { pink: PINK, butter: "#ffcb47", periwinkle: "#7d93e8", mint: "#73dfbf" };
 
 // The title font and the round Coco sticker (a 260px PNG of
-// public/logo.webp, since Satori can't draw WebP) live in public/pin and
+// public/coco-logo.webp, since Satori can't draw WebP) live in public/pin and
 // are fetched from the site itself. Reading them off disk next to this file
 // worked locally, but Netlify's function bundle leaves those files out, so
 // every pin answered 500.

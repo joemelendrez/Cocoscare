@@ -78,7 +78,7 @@ export default async function Home() {
           <Parallax speed={50} className="relative mx-auto w-full max-w-sm">
             <div className="sticker relative aspect-square rotate-[-4deg] rounded-[2.5rem] bg-periwinkle">
               <div className="dots absolute inset-0 rounded-[2.3rem]" aria-hidden="true" />
-              <Image src="/logo.webp" alt="" fill sizes="384px" className="object-contain p-4" />
+              <Image src="/coco-logo.webp" alt="" fill sizes="384px" className="object-contain p-4" />
             </div>
             <span className="sticker-sm absolute -bottom-5 -right-3 rotate-6 rounded-full bg-paper px-4 py-2 font-display text-lg tracking-wide">
               Hi, I&rsquo;m Coco! <Heart className="inline h-5 w-5" />

@@ -83,7 +83,7 @@ export default function Header() {
               whileHover={{ rotate: [0, -12, 10, -6, 0], scale: 1.08 }}
               transition={{ duration: 0.6 }}
             >
-              <Image src="/logo.webp" alt="" fill sizes="56px" className="object-contain" priority />
+              <Image src="/coco-logo.webp" alt="" fill sizes="56px" className="object-contain" priority />
             </motion.span>
             <span className="font-display text-2xl leading-none tracking-wide sm:text-[1.7rem]">
               Coco<span className="text-pink">&rsquo;s</span> Care

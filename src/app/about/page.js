@@ -36,7 +36,7 @@ export default function AboutPage() {
           <Parallax speed={60} className="mx-auto w-full max-w-sm">
             <div className="sticker relative aspect-square rotate-3 rounded-full bg-pink">
               <div className="dots absolute inset-0 rounded-full" aria-hidden="true" />
-              <Image src="/logo.webp" alt="Cartoon of Coco holding cookie dough" fill sizes="384px" className="object-contain" />
+              <Image src="/coco-logo.webp" alt="Cartoon of Coco holding cookie dough" fill sizes="384px" className="object-contain" />
             </div>
           </Parallax>
           <Reveal>
