@@ -1,5 +1,10 @@
 // Shared by the post pin (./pin) and share preview (./og) images.
 
+// Bump when the pin or share image design changes (a new logo, colors):
+// Pinterest and social sites cache images by URL, so a new number makes
+// them fetch the new look for every save and share from then on.
+export const PIN_VERSION = "2";
+
 export const PINK = "#ff0f9a";
 export const INK = "#161016";
 export const BAND = { pink: PINK, butter: "#ffcb47", periwinkle: "#7d93e8", mint: "#73dfbf" };
