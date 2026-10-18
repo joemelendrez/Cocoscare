@@ -18,6 +18,7 @@ import { instacartConfigured } from "@/lib/instacart";
 import { resendConfigured } from "@/lib/resend";
 import { walmartAffiliateLink } from "@/lib/walmart";
 import { recipeSchema } from "@/lib/recipe";
+import { PIN_VERSION } from "@/lib/pinImage";
 
 export const revalidate = 60;
 
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }) {
   const post = await getPost(slug);
   if (!post) return { title: "Post not found" };
   // The branded wide preview (./og), drawn from the cover and title.
-  const images = [{ url: `/blog/${post.slug}/og`, width: 1200, height: 630, alt: post.title }];
+  const images = [{ url: `/blog/${post.slug}/og?v=${PIN_VERSION}`, width: 1200, height: 630, alt: post.title }];
   return {
     title: post.title,
     description: post.excerpt || undefined,
@@ -90,14 +91,15 @@ export default async function PostPage({ params }) {
   // Every Save goes out with the post's tall pin image (./pin) and a
   // description longer than the title, which is what Pinterest searches.
   const pinImage = `${url}/pin`;
+  const v = { v: PIN_VERSION };
   const pinDescription = [post.title, post.excerpt].filter(Boolean).join(" | ").slice(0, 480);
-  const pinUrl = `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({ url, media: pinImage, description: pinDescription })}`;
+  const pinUrl = `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({ url, media: `${pinImage}?${new URLSearchParams(v)}`, description: pinDescription })}`;
   // A recipe card saves its own pin: that recipe's photo and name.
   const recipePinUrl = (r) =>
     r.id
       ? `https://www.pinterest.com/pin/create/button/?${new URLSearchParams({
           url,
-          media: `${pinImage}?${new URLSearchParams({ recipe: String(r.id) })}`,
+          media: `${pinImage}?${new URLSearchParams({ recipe: String(r.id), ...v })}`,
           description: [r.title, r.summary || post.excerpt].filter(Boolean).join(" | ").slice(0, 480),
         })}`
       : pinUrl;
