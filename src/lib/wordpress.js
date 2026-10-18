@@ -17,6 +17,15 @@ export function decodeEntities(text = "") {
     .replace(/&([a-z]+);/gi, (m, name) => ENTITIES[name.toLowerCase()] ?? m);
 }
 
+// Links Handoff Hero put in a post point at the WordPress host
+// (cms.habitnova.com/cocoscare/<slug>/). Readers should land on the post
+// here, so those become /blog/<slug>. Uploads, admin pages and archive
+// links (category/, tag/, wp-*) stay as they are.
+const CMS_POST_LINK = /(href=["'])https?:\/\/cms\.habitnova\.com\/cocoscare\/(?:\d{4}\/\d{2}\/(?:\d{2}\/)?)?(?!wp-|category\/|tag\/|author\/|feed\/)([a-z0-9][a-z0-9-]*)\/?(?=["'#?])/gi;
+const CMS_HOME_LINK = /(href=["'])https?:\/\/cms\.habitnova\.com\/cocoscare\/?(?=["'#?])/gi;
+
+export const localizeCmsLinks = (html = "") => html.replace(CMS_POST_LINK, "$1/blog/$2").replace(CMS_HOME_LINK, "$1/");
+
 export const stripTags = (html = "") => decodeEntities(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
 
 // WordPress category slugs and the blog categories they show under.
