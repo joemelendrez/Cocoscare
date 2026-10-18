@@ -53,7 +53,7 @@ export default function Footer() {
         <div className="col-span-2 sm:col-span-3 lg:col-span-1">
           <Link href="/" className="inline-flex items-center gap-3">
             <span className="relative block h-16 w-16 shrink-0">
-              <Image src="/logo.webp" alt="" fill sizes="64px" className="object-contain" />
+              <Image src="/coco-logo.webp" alt="" fill sizes="64px" className="object-contain" />
             </span>
             <span className="font-display text-4xl tracking-wide text-paper text-outline">Coco&rsquo;s Care</span>
           </Link>

@@ -68,7 +68,7 @@ function Brand() {
         whileHover={{ rotate: [0, -12, 10, -6, 0], scale: 1.08 }}
         transition={{ duration: 0.6 }}
       >
-        <Image src="/logo.webp" alt="" fill sizes="48px" className="object-contain" />
+        <Image src="/coco-logo.webp" alt="" fill sizes="48px" className="object-contain" />
       </motion.span>
       <span className="leading-none">
         <span className="block whitespace-nowrap font-display text-xl tracking-wide">

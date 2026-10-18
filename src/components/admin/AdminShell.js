@@ -19,7 +19,7 @@ function Centered({ children }) {
       <div className="sticker w-full max-w-md rounded-[2rem] bg-paper p-7">
         <div className="mb-5 flex items-center gap-3">
           <span className="relative block h-14 w-14">
-            <Image src="/logo.webp" alt="" fill sizes="56px" className="object-contain" />
+            <Image src="/coco-logo.webp" alt="" fill sizes="56px" className="object-contain" />
           </span>
           <p className="font-display text-2xl tracking-wide">Coco&rsquo;s Kitchen</p>
         </div>

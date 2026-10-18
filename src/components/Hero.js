@@ -127,7 +127,7 @@ export default function Hero() {
               <div className="absolute inset-[-4%] animate-spin-slow rounded-full border-[3px] border-dashed border-ink/70" />
               <div className="absolute inset-[3%] rounded-full bg-butter sticker" />
               <Image
-                src="/logo.webp"
+                src="/coco-logo.webp"
                 alt="Coco, cartoon style, holding a bowl of cookie dough"
                 fill
                 priority
