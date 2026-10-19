@@ -2,6 +2,7 @@ import { marked } from "marked";
 import { CARD_TOKEN, cardLines } from "@/lib/data";
 import { localizeCmsLinks, stripTags } from "@/lib/wordpress";
 import { tagAmazonLinksInHtml } from "@/lib/amazon";
+import { splitCompare } from "@/lib/compareTable";
 
 // Splits a post body at its {{product:…}} / {{recipe:…}} lines so each card
 // renders between the HTML chunks. Bodies are Markdown written in /admin,
@@ -20,7 +21,10 @@ export function bodySegments(body = "", { products = [], recipes = [], html = fa
     last = match.index + match[0].length;
   }
   segments.push({ type: "html", html: render(text.slice(last)) });
-  return segments.flatMap((s) => (s.type === "html" ? splitFaq(s.html) : [s])).filter((s) => s.type !== "html" || s.html.trim());
+  return segments
+    .flatMap((s) => (s.type === "html" ? splitCompare(s.html) : [s]))
+    .flatMap((s) => (s.type === "html" ? splitFaq(s.html) : [s]))
+    .filter((s) => s.type !== "html" || s.html.trim());
 }
 
 const FAQ_HEADING = /^(frequently asked questions|faqs?|common questions)\b/i;

@@ -12,6 +12,8 @@ import { CategoryIcon, Heart } from "@/components/Doodles";
 import { COLOR, SITE, categoryFor } from "@/lib/content";
 import { getPost, getPostSlugs, readingMinutes } from "@/lib/data";
 import { bodySegments, faqSchema } from "@/lib/postBody";
+import { compareHasLinks } from "@/lib/compareTable";
+import ComparisonTable from "@/components/ComparisonTable";
 import { withHeadingIds } from "@/lib/postHeadings";
 import { mailchimpConfigured } from "@/lib/mailchimp";
 import { instacartConfigured } from "@/lib/instacart";
@@ -185,7 +187,7 @@ export default async function PostPage({ params }) {
             />
           )}
 
-          {post.products.length > 0 && (
+          {(post.products.length > 0 || compareHasLinks(segments)) && (
             <p className="mb-8 rounded-2xl border-2 border-dashed border-ink/40 px-4 py-3 text-sm text-ink/70">
               This post has affiliate links. If you buy through them I may earn a small commission at no extra cost to you.
             </p>
@@ -212,6 +214,8 @@ export default async function PostPage({ params }) {
                     shop={shop}
                   />
                 </div>
+              ) : s.type === "compare" ? (
+                <ComparisonTable key={i} table={s.table} id={s.anchorId} />
               ) : (
                 <div key={i} className="post-body">
                   <ProductEmbed product={s.product} />

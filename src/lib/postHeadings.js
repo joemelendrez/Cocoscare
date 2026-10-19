@@ -27,6 +27,12 @@ export function withHeadingIds(segments, { endRecipe = null } = {}) {
       headings.push({ id: s.anchorId, text: s.recipe.title, level: 2, kind: "recipe" });
       return s;
     }
+    if (s.type === "compare") {
+      const text = s.table.title || "Side by side";
+      const id = idFor(text);
+      headings.push({ id, text, level: 2 });
+      return { ...s, anchorId: id };
+    }
     if (s.type !== "html") return s;
     const html = s.html.replace(/<(h[23])([^>]*)>([\s\S]*?)<\/\1>/gi, (match, tag, attrs, inner) => {
       const text = stripTags(inner);
