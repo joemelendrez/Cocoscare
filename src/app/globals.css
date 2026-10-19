@@ -316,3 +316,52 @@ body {
 .post-body :is(h2, h3) {
   scroll-margin-top: 7rem;
 }
+
+/* Links and lists inside a comparison table cell. */
+.compare-cell a {
+  color: var(--pink-deep);
+  font-weight: 600;
+  text-decoration: underline;
+}
+.compare-cell ul {
+  list-style: none;
+  padding: 0;
+}
+.compare-cell ul li::before {
+  content: "♥ ";
+  color: var(--pink);
+}
+
+/* A plain table in a post (or a comparison block that couldn't be read). */
+.post-body table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 3px solid var(--ink);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.post-body figure:has(> table) {
+  overflow-x: auto;
+}
+.post-body th,
+.post-body td {
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  vertical-align: top;
+  border-top: 2px dashed color-mix(in srgb, var(--ink) 20%, transparent);
+}
+.post-body thead th {
+  border-top: 0;
+  background: var(--blush);
+  font-family: var(--font-lilita);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+.post-body figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--ink) 60%, transparent);
+}
