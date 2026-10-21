@@ -309,3 +309,29 @@ export function CopyCode({ code, compact = false, disabled = false }) {
     </div>
   );
 }
+
+// Calls one of the /api/admin routes as the signed-in admin. Throws with the
+// route's own error message.
+export async function adminFetch(supabase, path, init = {}) {
+  const { data } = await supabase.auth.getSession();
+  const res = await fetch(path, {
+    ...init,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token || ""}` },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || "Something went wrong. Try again.");
+  return json;
+}
+
+// A page title with an optional line under it and buttons on the right.
+export function PageTitle({ title, intro, children }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 className="font-display text-4xl tracking-wide">{title}</h1>
+        {intro && <p className="mt-1 text-ink/70">{intro}</p>}
+      </div>
+      {children}
+    </div>
+  );
+}

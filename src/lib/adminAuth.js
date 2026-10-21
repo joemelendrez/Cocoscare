@@ -3,7 +3,7 @@ import { supabaseConfigured } from "@/lib/supabase";
 
 // Checks the caller's Supabase login (Bearer token) is on the admins list.
 // Returns { denied } with the Response to send back when not, or { db }, a
-// client that acts as that admin (so RLS still applies).
+// client that acts as that admin (so RLS still applies), plus the token.
 export async function adminClient(request) {
   if (!supabaseConfigured) return { denied: Response.json({ error: "Not configured" }, { status: 503 }) };
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -15,7 +15,7 @@ export async function adminClient(request) {
   });
   const { data: isAdmin, error } = await db.rpc("is_admin");
   if (error || isAdmin !== true) return { denied: Response.json({ error: "Forbidden" }, { status: 403 }) };
-  return { db };
+  return { db, token };
 }
 
 // Returns null when allowed, or the Response to send back when not.

@@ -17,11 +17,35 @@ export const ADMIN_NAV = [
   { href: "/admin/products", label: "Shop picks", short: "Shop", color: "periwinkle", icon: "bag" },
 ];
 
+// Growing the blog. On phones these sit in the More sheet.
+export const GROW_NAV = [
+  { href: "/admin/subscribers", label: "Subscribers", color: "mint", icon: "heart" },
+  { href: "/admin/newsletter", label: "Newsletter", color: "pink", icon: "mail" },
+  { href: "/admin/images", label: "Section images", color: "butter", icon: "image" },
+];
+
 export function navActive(pathname, href) {
   return href === "/admin" ? pathname === "/admin" || pathname.startsWith("/admin/posts") : pathname.startsWith(href);
 }
 
 function NavIcon({ name, className }) {
+  if (name === "mail") {
+    return (
+      <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
+        <rect x="6" y="10" width="28" height="21" rx="3" {...STROKE} fill="var(--paper)" />
+        <path d="M7 12l13 10 13-10" {...STROKE} />
+      </svg>
+    );
+  }
+  if (name === "image") {
+    return (
+      <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
+        <rect x="6" y="8" width="28" height="24" rx="4" {...STROKE} fill="var(--paper)" />
+        <circle cx="15" cy="16" r="3" {...STROKE} fill="var(--pink)" strokeWidth="2.5" />
+        <path d="M7 29l9-8 6 5 4-3 7 6" {...STROKE} />
+      </svg>
+    );
+  }
   if (name !== "pencil") return <CategoryIcon name={name} className={className} />;
   return (
     <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
@@ -84,42 +108,49 @@ function Brand() {
 // turned on its side. Phones: a top bar and an app-style bottom tab bar.
 export default function AdminNav({ pathname, email, onSignOut }) {
   const [more, setMore] = useState(false);
-  const activeHref = ADMIN_NAV.find((n) => navActive(pathname, n.href))?.href;
+  const activeHref = [...ADMIN_NAV, ...GROW_NAV].find((n) => navActive(pathname, n.href))?.href;
 
   return (
     <>
-      <aside className="sticker fixed inset-y-4 left-4 z-40 hidden w-64 flex-col rounded-[2rem] bg-paper p-4 lg:flex">
+      <aside className="sticker fixed inset-y-4 left-4 z-40 hidden w-64 flex-col overflow-y-auto rounded-[2rem] bg-paper p-4 lg:flex">
         <div className="px-1 pt-1">
           <Brand />
         </div>
-        <p className="mt-7 px-2 text-xs font-semibold uppercase tracking-widest text-ink/50">Write</p>
-        <nav aria-label="Admin" className="mt-2 space-y-1.5">
-          {ADMIN_NAV.map((item) => {
-            const active = item.href === activeHref;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={`relative flex items-center gap-3 rounded-[1.25rem] px-2 py-2 font-display text-xl tracking-wide transition-transform ${
-                  active ? "" : "hover:translate-x-1 hover:bg-blush"
-                }`}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="admin-side-blob"
-                    className="absolute inset-0 -rotate-1 rounded-[1.25rem] border-[2.5px] border-ink bg-pink-soft shadow-[3px_3px_0_var(--shadow)]"
-                    transition={JELLY}
-                  />
-                )}
-                <span className="relative">
-                  <Tile item={item} />
-                </span>
-                <span className="relative">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        {[
+          ["Write", ADMIN_NAV],
+          ["Grow", GROW_NAV],
+        ].map(([label, items], gi) => (
+          <div key={label}>
+            <p className={`${gi ? "mt-5" : "mt-7"} px-2 text-xs font-semibold uppercase tracking-widest text-ink/50`}>{label}</p>
+            <nav aria-label={label} className="mt-2 space-y-1.5">
+              {items.map((item) => {
+                const active = item.href === activeHref;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    className={`relative flex items-center gap-3 rounded-[1.25rem] px-2 py-2 font-display text-xl tracking-wide transition-transform ${
+                      active ? "" : "hover:translate-x-1 hover:bg-blush"
+                    }`}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="admin-side-blob"
+                        className="absolute inset-0 -rotate-1 rounded-[1.25rem] border-[2.5px] border-ink bg-pink-soft shadow-[3px_3px_0_var(--shadow)]"
+                        transition={JELLY}
+                      />
+                    )}
+                    <span className="relative">
+                      <Tile item={item} />
+                    </span>
+                    <span className="relative">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
 
         <div className="mt-auto space-y-3 border-t-2 border-dashed border-ink/25 pt-4">
           <Link
@@ -212,6 +243,22 @@ export default function AdminNav({ pathname, email, onSignOut }) {
               transition={{ type: "spring", stiffness: 380, damping: 32 }}
             >
               <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-ink/20" />
+              <div className="mb-3 space-y-2">
+                {GROW_NAV.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMore(false)}
+                    aria-current={item.href === activeHref ? "page" : undefined}
+                    className={`flex items-center gap-3 rounded-[1.5rem] border-[2.5px] border-ink px-3 py-2.5 font-display text-xl tracking-wide ${
+                      item.href === activeHref ? "bg-pink-soft" : "bg-paper"
+                    }`}
+                  >
+                    <Tile item={item} />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
               <Link
                 href="/"
                 target="_blank"
