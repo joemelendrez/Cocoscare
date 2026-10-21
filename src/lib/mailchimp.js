@@ -38,3 +38,22 @@ export async function subscribe(email, tags = []) {
   }
   return { ok: true };
 }
+
+// For /admin: any Marketing API call. Throws with Mailchimp's own message.
+export async function mailchimp(path, { method = "GET", body } = {}) {
+  const dc = KEY.split("-").pop();
+  const res = await fetch(`https://${dc}.api.mailchimp.com/3.0${path}`, {
+    method,
+    headers: { Authorization: `Basic ${Buffer.from(`any:${KEY}`).toString("base64")}`, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+    signal: AbortSignal.timeout(15000),
+  });
+  const json = res.status === 204 ? {} : await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.detail || json.title || `Mailchimp answered ${res.status}`);
+  return json;
+}
+
+export const audienceId = AUDIENCE;
+// Where a campaign opens in Mailchimp's own editor (needs its web_id).
+export const mailchimpAdminUrl = (path) => (KEY ? `https://${KEY.split("-").pop()}.admin.mailchimp.com${path}` : "");
