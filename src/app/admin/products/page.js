@@ -12,10 +12,10 @@ export default function AdminProducts() {
     <AdminList
       table="products"
       title="Shop"
-      intro="Your picks. Live ones show in the shop. Tap Copy card and paste it on its own line in any post to show it there."
+      intro="Your picks. Live faves show in the shop with their own page; the rest only show as cards inside posts (handy for roundups like the best car seats). Tap Copy card and paste it on its own line in any post to show it there."
       newHref="/admin/products/new"
       newLabel="New pick"
-      select="id, slug, name, section, status, image_url, url, featured, updated_at"
+      select="*"
       statuses={[
         { value: "draft", label: "Drafts" },
         { value: "published", label: "Live" },
@@ -27,7 +27,7 @@ export default function AdminProducts() {
           <RowThumb src={r.image_url} fallback="💗" />
           <RowText
             title={`${r.featured ? "★ " : ""}${r.name}`}
-            sub={`${sectionLabel(r.section)}${r.url ? "" : " · no link yet"}`}
+            sub={`${sectionLabel(r.section)} · ${r.fave === false ? "Post cards only" : "Fave, in the shop"}${r.url ? "" : " · no link yet"}`}
           />
         </>
       )}

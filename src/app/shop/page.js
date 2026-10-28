@@ -1,6 +1,6 @@
 import PageHero from "@/components/PageHero";
 import { ShopGrid } from "@/components/FilterGrid";
-import { getProducts } from "@/lib/data";
+import { getFeaturedCounts, getProducts } from "@/lib/data";
 
 export const revalidate = 60;
 
@@ -11,7 +11,8 @@ export const metadata = {
 };
 
 export default async function ShopPage() {
-  const { products } = await getProducts();
+  const [{ products }, counts] = await Promise.all([getProducts(), getFeaturedCounts()]);
+  const withCounts = products.map((p) => ({ ...p, featured_in: counts[p.slug] || 0 }));
   return (
     <>
       <PageHero eyebrow="Coco approved" title="Shop my faves" color="periwinkle">
@@ -19,7 +20,7 @@ export default async function ShopPage() {
         not on this page.
       </PageHero>
       <section className="mx-auto max-w-6xl px-5 py-16 sm:py-20">
-        <ShopGrid products={products} />
+        <ShopGrid products={withCounts} />
         <p className="mx-auto mt-14 max-w-2xl rounded-2xl border-2 border-dashed border-ink/40 p-5 text-center text-sm text-ink/70">
           Heads up: these are affiliate links. If you buy through them I may earn a small commission at no extra cost
           to you, which helps keep this little blog going.

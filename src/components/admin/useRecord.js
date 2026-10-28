@@ -68,3 +68,22 @@ export function useRecord(table, id, blank, basePath) {
 
   return { record, update, save, remove, notice, setNotice, saving, missing, isNew, supabase };
 }
+
+// Whether a newer column exists yet (its migration has been run), so an
+// editor can hide fields the database can't save. null while checking.
+export function useHasColumn(table, column) {
+  const { supabase } = useAdmin();
+  const [has, setHas] = useState(null);
+  useEffect(() => {
+    let live = true;
+    supabase
+      .from(table)
+      .select(column)
+      .limit(1)
+      .then(({ error }) => live && setHas(!error));
+    return () => {
+      live = false;
+    };
+  }, [supabase, table, column]);
+  return has;
+}

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RecipeCard from "@/components/RecipeCard";
-import { useRecord } from "@/components/admin/useRecord";
+import { useHasColumn, useRecord } from "@/components/admin/useRecord";
 import { useAdmin } from "@/components/admin/AdminShell";
 import {
   Button,
@@ -16,6 +16,7 @@ import {
   PhotoInput,
   RowTools,
   Segmented,
+  Select,
   TextArea,
   TextInput,
   moveItem,
@@ -65,7 +66,60 @@ function toRecipe(form) {
       }),
     tips: form.tips.trim() || null,
     status: form.status,
+    // Only sent once migration 0005 has added the column (see RecipeForm).
+    ...(form.hasGear ? { gear: form.gear } : {}),
   };
+}
+
+// "What I used": shop picks this recipe uses. A fave's page lists the
+// recipes that use it, and the recipe card links each pick.
+function GearPicker({ supabase, value, onChange }) {
+  const [picks, setPicks] = useState(null);
+  useEffect(() => {
+    let live = true;
+    supabase
+      .from("products")
+      .select("*")
+      .order("name")
+      .then(({ data }) => live && setPicks(data || []));
+    return () => {
+      live = false;
+    };
+  }, [supabase]);
+  const chosen = value.map((slug) => picks?.find((p) => p.slug === slug) || { slug, name: slug, missing: true });
+  const left = (picks || []).filter((p) => !value.includes(p.slug));
+  return (
+    <div className="space-y-3">
+      {chosen.length > 0 && (
+        <ul className="space-y-2">
+          {chosen.map((p, i) => (
+            <li key={p.slug} className="flex items-center gap-3 rounded-2xl border-2 border-ink/20 p-2">
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{p.name}</span>
+                <span className="text-xs text-ink/60">
+                  {p.missing ? "Not in your shop picks any more, so it won't show" : p.fave === false ? "Post cards only (links straight to the shop)" : "Fave (links to its page)"}
+                  {p.status === "draft" ? " · draft, shows once it's live" : ""}
+                </span>
+              </span>
+              <RowTools index={i} count={chosen.length} label={p.name} onMove={(index, dir) => onChange(moveItem(value, index, dir))} onRemove={(index) => onChange(value.filter((_, j) => j !== index))} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {picks === null ? (
+        <p className="text-sm text-ink/60">Loading your picks…</p>
+      ) : left.length ? (
+        <Select
+          aria-label="Add a pick"
+          value=""
+          onChange={(e) => e.target.value && onChange([...value, e.target.value])}
+          options={[{ value: "", label: "+ Add a pick from your shop…" }, ...left.map((p) => ({ value: p.slug, label: p.name }))]}
+        />
+      ) : (
+        <p className="text-sm text-ink/60">{picks.length ? "Every pick is added." : "No shop picks yet. Add one under Shop first."}</p>
+      )}
+    </div>
+  );
 }
 
 function PasteBox({ label, placeholder, onAdd }) {
@@ -112,17 +166,19 @@ function RecipeForm({ initial, rec }) {
     cook_minutes: initial.cook_minutes ?? "",
     ingredients: toIngredientRows(initial.ingredients || []),
     steps: toStepRows(initial.steps || []),
+    gear: Array.isArray(initial.gear) ? initial.gear : [],
   }));
+  const hasGear = useHasColumn("recipes", "gear");
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setRow = (list, i, patch) => set({ [list]: form[list].map((r, j) => (j === i ? { ...r, ...patch } : r)) });
 
-  const recipe = toRecipe(form);
+  const recipe = toRecipe({ ...form, hasGear });
   const badAmounts = form.ingredients.filter((r) => r.amountText.trim() && parseAmount(r.amountText) == null);
   const canSave = recipe.title && recipe.slug && !badAmounts.length;
 
   const save = async (status = form.status) => {
-    const values = { ...toRecipe({ ...form, status }) };
+    const values = { ...toRecipe({ ...form, hasGear, status }) };
     const saved = await rec.save(values, {
       message:
         status === "published"
@@ -282,6 +338,13 @@ function RecipeForm({ initial, rec }) {
           />
         </Field>
       </Card>
+
+      {hasGear && (
+        <Card title="What I used">
+          <p className="mb-3 text-ink/75">Pans, gadgets or anything from your shop picks this recipe uses. They show at the end of the recipe card, and the recipe shows on each fave&rsquo;s page.</p>
+          <GearPicker supabase={supabase} value={form.gear} onChange={(gear) => set({ gear })} />
+        </Card>
+      )}
 
       <Card title="Use it in a post">
         <p className="mb-3 text-ink/75">Paste this on its own line anywhere in a post and the full recipe card shows there, with timers and the servings scaler:</p>

@@ -118,6 +118,8 @@ export function Notice({ notice }) {
 export function friendlyError(error) {
   if (!error) return "";
   if (error.code === "23505") return "That link name is already used. Change the link name and save again.";
+  if (error.code === "PGRST204" || error.code === "42703")
+    return "The database needs a quick update before this can save (run the newest file in supabase/migrations). Ask Joseph.";
   if (error.code === "23514") return "Something in the form isn't allowed. Check the link name (lowercase letters, numbers, dashes) and the shop link (must start with https://).";
   return error.message || "Something went wrong. Try again.";
 }
