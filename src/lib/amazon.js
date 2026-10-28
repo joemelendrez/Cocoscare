@@ -39,7 +39,10 @@ export function tagAmazonLinksInHtml(html = "") {
 export const withTaggedUrl = (item) => (item?.url ? { ...item, url: withAmazonTag(item.url) } : item);
 
 // The product's ASIN from a full amazon.com link (/dp/…, /gp/product/…).
-// Short amzn.to links don't carry one.
+// Short links (amzn.to, link.amazon, a.co) don't carry one; the server
+// follows them to the product page first (resolveAmazonAsin in
+// amazonResolve.js). Search links (amazon.com/s?k=…) never name a product,
+// so they can't show a photo.
 export function amazonAsin(url) {
   if (!isAmazonUrl(url)) return null;
   const { hostname, pathname } = new URL(url);
@@ -52,8 +55,11 @@ export function amazonAsin(url) {
 // URL SiteStripe's image link uses). Hotlinked, never copied: Associates may
 // show Amazon's images only this way.
 export function amazonImageUrl(url) {
-  const asin = amazonAsin(url);
-  if (!asin) return null;
+  return amazonImageForAsin(amazonAsin(url));
+}
+
+export function amazonImageForAsin(asin) {
+  if (!asin || !/^[A-Z0-9]{10}$/.test(asin)) return null;
   const params = new URLSearchParams({
     _encoding: "UTF8",
     ASIN: asin,
@@ -67,11 +73,23 @@ export function amazonImageUrl(url) {
   return `https://ws-na.amazon-adsystem.com/widgets/q?${params}`;
 }
 
+// Amazon's short links: SiteStripe's link.amazon and amzn.to, the app's a.co.
+const SHORT_HOST = /^(?:amzn\.to|a\.co|link\.amazon|amzn\.eu)$/i;
+
+export function isAmazonShortLink(url) {
+  try {
+    return SHORT_HOST.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
 // A pick with no photo of its own shows Amazon's (her photos always win).
-// amazon_image marks it, so it isn't used as a share/Pinterest image.
-export function withAmazonImage(item) {
+// amazon_image marks it, so it isn't used as a share/Pinterest image. Pass
+// the ASIN when it came from resolving a short link.
+export function withAmazonImage(item, asin) {
   if (!item || item.image_url) return item;
-  const image = amazonImageUrl(item.url);
+  const image = asin ? amazonImageForAsin(asin) : amazonImageUrl(item.url);
   return image ? { ...item, image_url: image, amazon_image: true } : item;
 }
 
