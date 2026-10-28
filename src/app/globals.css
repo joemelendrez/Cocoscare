@@ -315,6 +315,135 @@ body {
   .no-print {
     display: none !important;
   }
+
+  /* A printed recipe is a plain sheet: ink on white, small type, the
+     ingredients beside the steps, so most recipes fit on one page. */
+  .recipe-card.print-target {
+    border: 0 !important;
+    border-radius: 0 !important;
+    font-size: 10.5pt;
+    line-height: 1.35;
+    color: #000;
+  }
+  .print-target .rc-head {
+    padding: 0 0 10pt !important;
+    background: none !important;
+    color: #000 !important;
+    border-bottom: 1.5pt solid #000 !important;
+  }
+  .print-target .rc-badge {
+    display: none !important;
+  }
+  .print-target .rc-title {
+    margin: 0 !important;
+    font-size: 20pt !important;
+    line-height: 1.1 !important;
+    -webkit-text-stroke: 0 !important;
+    text-shadow: none !important;
+    color: #000 !important;
+  }
+  .print-target .rc-summary {
+    margin-top: 3pt !important;
+    font-size: 10.5pt !important;
+    font-weight: 400 !important;
+  }
+  .print-target .rc-stats {
+    display: flex !important;
+    gap: 14pt !important;
+    margin-top: 6pt !important;
+  }
+  .print-target .rc-stats > div {
+    display: flex !important;
+    gap: 4pt;
+    align-items: baseline;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+  .print-target .rc-stats p {
+    font-size: 9.5pt !important;
+    line-height: 1.2 !important;
+    color: #000 !important;
+  }
+  .print-target .rc-body {
+    display: grid !important;
+    grid-template-columns: 1fr 1.7fr !important;
+    gap: 18pt !important;
+    padding: 10pt 0 0 !important;
+  }
+  .print-target .rc-body h3 {
+    font-size: 12.5pt !important;
+  }
+  .print-target .rc-ings,
+  .print-target .rc-steps {
+    margin-top: 5pt !important;
+  }
+  .print-target .rc-ings > li + li {
+    margin-top: 1pt !important;
+  }
+  .print-target .rc-ings label {
+    padding: 0 !important;
+    gap: 5pt !important;
+    text-decoration: none !important;
+    color: #000 !important;
+  }
+  .print-target .rc-ings label > span:first-of-type {
+    width: 8pt !important;
+    height: 8pt !important;
+    margin-top: 3pt !important;
+    border-width: 1pt !important;
+    background: none !important;
+  }
+  .print-target .rc-ings label > span:first-of-type > span {
+    display: none;
+  }
+  .print-target .rc-steps > li + li {
+    margin-top: 6pt !important;
+  }
+  .print-target .rc-step {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: none !important;
+    break-inside: avoid;
+  }
+  .print-target .rc-step > div {
+    gap: 6pt !important;
+  }
+  .print-target .rc-num {
+    width: 15pt !important;
+    height: 15pt !important;
+    font-size: 9pt !important;
+    border-width: 1pt !important;
+    background: none !important;
+  }
+  .print-target .rc-step p {
+    padding-top: 0 !important;
+    font-size: 10.5pt !important;
+    line-height: 1.35 !important;
+    color: #000 !important;
+  }
+  .print-target .rc-tips {
+    margin-top: 10pt !important;
+    padding: 6pt 8pt !important;
+    border-width: 1pt !important;
+    border-radius: 6pt !important;
+    background: none !important;
+    break-inside: avoid;
+  }
+  .print-target .rc-tips p:first-child {
+    font-size: 11pt !important;
+  }
+  .print-target .rc-source {
+    display: block !important;
+    margin-top: 12pt;
+    padding-top: 5pt;
+    border-top: 1pt solid #000;
+    font-size: 8.5pt;
+  }
+}
+
+@page {
+  margin: 0.5in;
 }
 
 /* Table of contents links land below the floating header. */
