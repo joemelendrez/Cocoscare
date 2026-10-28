@@ -20,7 +20,7 @@ export async function generateMetadata({ params }) {
   const fave = await getFave(slug);
   if (!fave) return { title: "Pick not found" };
   const description = fave.note || `Why ${fave.name} is one of Coco's faves.`;
-  const image = fave.image_url || fave.photos[0];
+  const image = (fave.amazon_image ? null : fave.image_url) || fave.photos[0];
   return {
     title: `${fave.name} review`,
     description,
