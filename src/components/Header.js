@@ -109,7 +109,7 @@ export default function Header() {
                     onFocus={() => setHovered(item.href)}
                     onBlur={() => setHovered(null)}
                     aria-current={active ? "page" : undefined}
-                    className="relative block rounded-full px-5 py-2 font-display text-lg tracking-wide"
+                    className="relative block rounded-full px-3.5 py-2 font-display text-lg tracking-wide lg:px-5"
                   >
                     {item.label}
                   </Link>
@@ -207,9 +207,9 @@ function PhoneMenu({ pathname, onClose }) {
         </motion.div>
       ))}
 
-      <div className="relative flex h-full flex-col px-6 pb-10 pt-28">
+      <div className="relative flex h-full flex-col overflow-y-auto overscroll-contain px-6 pb-10 pt-28">
         <p className="font-display text-xl tracking-wide text-paper/90">Where to, mama?</p>
-        <ul className="mt-5 space-y-4">
+        <ul className="mt-5 space-y-3">
           {NAV.map((item, i) => {
             const active = isActive(pathname, item.href);
             return (
@@ -224,7 +224,7 @@ function PhoneMenu({ pathname, onClose }) {
                   href={item.href}
                   onClick={onClose}
                   aria-current={active ? "page" : undefined}
-                  className={`sticker lift flex items-center text-ink justify-between rounded-[2rem] px-6 py-4 ${item.color === "pink" ? "bg-paper" : COLOR[item.color].bg}`}
+                  className={`sticker lift flex items-center text-ink justify-between rounded-[2rem] px-6 py-3 ${item.color === "pink" ? "bg-paper" : COLOR[item.color].bg}`}
                 >
                   <span className="font-display text-4xl tracking-wide">{item.label}</span>
                   <span className="grid h-10 w-10 place-items-center rounded-full border-[2.5px] border-ink bg-paper text-xl">
