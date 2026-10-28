@@ -10,6 +10,7 @@ import { Bubble, Heart, Sparkle, Star } from "@/components/Doodles";
 import AccountButton from "@/components/AccountButton";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useUser } from "@/lib/account";
+import { setHeaderHidden, useReadingState } from "@/lib/readingProgress";
 import { supabaseConfigured } from "@/lib/supabase";
 
 const JELLY = { type: "spring", stiffness: 420, damping: 18 };
@@ -33,6 +34,8 @@ export default function Header() {
   const [hovered, setHovered] = useState(null);
   const lastY = useRef(0);
   const { scrollY } = useScroll();
+  const { progress } = useReadingState();
+  useEffect(() => setHeaderHidden(hidden), [hidden]);
 
   useMotionValueEvent(scrollY, "change", (y) => {
     const delta = y - lastY.current;
@@ -73,7 +76,7 @@ export default function Header() {
       >
         <nav
           aria-label="Main"
-          className={`sticker mx-auto flex max-w-6xl items-center justify-between rounded-full bg-paper pl-2 pr-2 transition-[padding] duration-300 ${
+          className={`sticker relative mx-auto flex max-w-6xl items-center justify-between rounded-full bg-paper pl-2 pr-2 transition-[padding] duration-300 ${
             scrolled ? "py-1.5" : "py-2.5"
           }`}
         >
@@ -129,6 +132,12 @@ export default function Header() {
             </Link>
             <MenuButton open={open} onClick={() => setOpen((o) => !o)} />
           </div>
+          {/* Reading progress on post pages, tucked along the bottom of the pill */}
+          {progress !== null && (
+            <div className="pointer-events-none absolute inset-x-7 -bottom-[3px] h-[5px] overflow-hidden rounded-full" aria-hidden="true">
+              <div className="h-full origin-left rounded-full bg-pink" style={{ transform: `scaleX(${progress / 100})` }} />
+            </div>
+          )}
         </nav>
       </motion.header>
 
