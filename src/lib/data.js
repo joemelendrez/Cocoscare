@@ -107,6 +107,11 @@ export async function getProducts({ limit = 200, featured } = {}) {
   return { products: data.map(withTaggedUrl), sample: false };
 }
 
+// A review is written in the editor, which has no code blocks, so leading
+// spaces only come from pasting (the Supabase SQL editor indents pasted
+// lines) and would turn the text into a raw, unwrapped code block.
+export const cleanDetails = (text) => (text || "").replace(/^[ \t]+/gm, "");
+
 // One fave for its own page (/shop/<slug>), or null. A pick that isn't a
 // fave has no page.
 export async function getFave(slug) {
@@ -115,7 +120,7 @@ export async function getFave(slug) {
   const { data, error } = await db.from("products").select("*").eq("slug", slug).eq("status", "published").maybeSingle();
   if (error) console.error("getFave failed", error.message);
   if (!data || data.fave === false) return null;
-  return withTaggedUrl({ ...data, fave: true, photos: Array.isArray(data.photos) ? data.photos.filter(Boolean) : [] });
+  return withTaggedUrl({ ...data, fave: true, details: cleanDetails(data.details), photos: Array.isArray(data.photos) ? data.photos.filter(Boolean) : [] });
 }
 
 export async function getFaveSlugs() {

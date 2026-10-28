@@ -208,6 +208,11 @@ body {
   line-height: 1.8;
   color: color-mix(in srgb, var(--ink) 88%, transparent);
 }
+/* Never let a stray code block push the page sideways on a phone. */
+.post-body pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .post-body > * + * {
   margin-top: 1.1em;
 }

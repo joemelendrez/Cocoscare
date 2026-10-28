@@ -9,7 +9,7 @@ import { useHasColumn, useRecord } from "@/components/admin/useRecord";
 import { useAdmin } from "@/components/admin/AdminShell";
 import { Button, Card, CopyCode, DeleteButton, Field, Notice, PhotoInput, RowTools, Segmented, Select, TextArea, TextInput, moveItem, uploadPhoto } from "@/components/admin/AdminUI";
 import { SHOP_SECTIONS } from "@/lib/content";
-import { cardToken } from "@/lib/data";
+import { cardToken, cleanDetails } from "@/lib/data";
 import { slugify } from "@/lib/recipe";
 import { withAmazonTag } from "@/lib/amazon";
 
@@ -61,7 +61,7 @@ function ProductForm({ initial, rec }) {
     note: initial.note || "",
     url: initial.url || "",
     price_label: initial.price_label || "",
-    details: initial.details || "",
+    details: cleanDetails(initial.details),
     photos: Array.isArray(initial.photos) ? initial.photos : [],
     fave: initial.fave ?? false,
   }));
