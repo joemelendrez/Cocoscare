@@ -1,5 +1,5 @@
 import { SITE } from "@/lib/content";
-import { getPostSlugs } from "@/lib/data";
+import { getFaveSlugs, getPostSlugs } from "@/lib/data";
 
 export const revalidate = 3600;
 
@@ -8,6 +8,10 @@ export default async function sitemap() {
     url: `${SITE.url}${path}`,
     lastModified: new Date(),
   }));
-  const slugs = await getPostSlugs();
-  return [...pages, ...slugs.map((p) => ({ url: `${SITE.url}/blog/${p.slug}`, lastModified: p.updated_at }))];
+  const [slugs, faves] = await Promise.all([getPostSlugs(), getFaveSlugs()]);
+  return [
+    ...pages,
+    ...slugs.map((p) => ({ url: `${SITE.url}/blog/${p.slug}`, lastModified: p.updated_at })),
+    ...faves.map((p) => ({ url: `${SITE.url}/shop/${p.slug}`, lastModified: p.updated_at || new Date() })),
+  ];
 }

@@ -6,6 +6,8 @@ import { Heart, Sparkle } from "@/components/Doodles";
 import RecipeEmail from "@/components/RecipeEmail";
 import SaveButton from "@/components/SaveButton";
 import ShopRecipe from "@/components/ShopRecipe";
+import Link from "next/link";
+import { favePath } from "@/components/Cards";
 import { formatAmount, formatClock, formatMinutes } from "@/lib/recipe";
 
 // Two soft chimes, made with Web Audio so there's no sound file to load.
@@ -212,6 +214,52 @@ function useWakeLock() {
 // `emailFrom` ({ slug, listOpen }) turns on "Email me this" once recipe
 // emails are set up; `pinUrl` saves this recipe's own pin. `shop`
 // ({ slug, instacart, walmartLink }) turns on "Shop ingredients".
+// The picks a recipe lists under "What I used": a fave opens its page,
+// anything else goes straight to the shop link.
+function WhatIUsed({ products }) {
+  return (
+    <div className="no-print mt-6 rounded-[1.5rem] border-[2.5px] border-ink bg-paper p-4 text-ink">
+      <p className="font-display text-lg tracking-wide">What I used</p>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {products.map((p) => {
+          const page = favePath(p);
+          const inner = (
+            <>
+              <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border-2 border-ink bg-blush">
+                {p.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- Supabase storage URLs
+                  <img src={p.image_url} alt="" loading="lazy" className="h-full w-full bg-paper object-contain p-0.5" />
+                ) : (
+                  <Heart className="h-5 w-5" fill="var(--paper)" />
+                )}
+              </span>
+              <span className="min-w-0 flex-1 font-semibold leading-tight">{p.name}</span>
+              <span className="shrink-0 text-sm font-semibold text-pink">{page ? "Review →" : "Shop →"}</span>
+            </>
+          );
+          const cls = "flex items-center gap-3 rounded-2xl border-2 border-ink/20 p-2 hover:border-ink";
+          return (
+            <li key={p.slug}>
+              {page ? (
+                <Link href={page} className={cls}>
+                  {inner}
+                </Link>
+              ) : p.url ? (
+                <a href={p.url} target="_blank" rel="sponsored noopener noreferrer" className={cls}>
+                  {inner}
+                </a>
+              ) : (
+                <span className={cls}>{inner}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-xs text-ink/60">Affiliate links: I may earn a small commission at no extra cost to you.</p>
+    </div>
+  );
+}
+
 export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, shop }) {
   const steps = recipe.steps || [];
   const ingredients = recipe.ingredients || [];
@@ -499,6 +547,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
               <p className="mt-1 whitespace-pre-line">{recipe.tips}</p>
             </div>
           )}
+          {recipe.gearProducts?.length > 0 && <WhatIUsed products={recipe.gearProducts} />}
         </div>
       </div>
     </section>

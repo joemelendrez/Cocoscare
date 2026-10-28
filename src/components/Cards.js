@@ -68,11 +68,17 @@ export function PostCard({ post }) {
   );
 }
 
+// A fave links to its own page (/shop/<slug>) from the photo and name.
+export const favePath = (pick) => (pick?.fave && pick.slug && (!pick.sample || pick.details) ? `/shop/${pick.slug}` : null);
+
 export function PickCard({ pick }) {
   const color = COLOR[pick.color] ? pick.color : "pink";
+  const page = favePath(pick);
+  const Photo = page ? Link : "div";
   return (
     <article className="sticker lift group flex h-full flex-col rounded-[1.75rem] bg-paper p-4">
-      <div
+      <Photo
+        {...(page ? { href: page, "aria-label": `${pick.name}: Coco's review` } : {})}
         className={`dots-ink relative grid aspect-square place-items-center overflow-hidden rounded-[1.25rem] border-[3px] border-ink ${COLOR[color].bg}`}
       >
         {pick.image_url ? (
@@ -99,12 +105,25 @@ export function PickCard({ pick }) {
             {pick.price_label}
           </span>
         )}
-      </div>
-      <h3 className="mt-4 font-display text-xl leading-tight tracking-wide">{pick.name}</h3>
+      </Photo>
+      <h3 className="mt-4 font-display text-xl leading-tight tracking-wide">
+        {page ? (
+          <Link href={page} className="hover:text-pink">
+            {pick.name}
+          </Link>
+        ) : (
+          pick.name
+        )}
+      </h3>
       {pick.note && (
         <p className="mt-1.5 flex-1 text-sm text-ink/70">
           <span className="font-semibold text-pink">Coco says:</span> {pick.note}
         </p>
+      )}
+      {page && (
+        <Link href={page} className="mt-3 text-sm font-semibold text-ink/70 underline underline-offset-2 hover:text-pink">
+          {pick.featured_in ? `Read my review · featured in ${pick.featured_in}` : "Read my review"}
+        </Link>
       )}
       {pick.url ? (
         <a
@@ -163,7 +182,14 @@ export function ProductEmbed({ product }) {
           </summary>
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
             {photo("w-full rounded-[1.25rem] border-[3px] sm:w-40")}
-            {product.note && <p className="text-base text-ink/75">{product.note}</p>}
+            <div>
+              {product.note && <p className="text-base text-ink/75">{product.note}</p>}
+              {favePath(product) && (
+                <Link href={favePath(product)} className="mt-2 inline-block font-semibold text-pink underline underline-offset-2">
+                  Read my full review →
+                </Link>
+              )}
+            </div>
           </div>
         </details>
         {product.url && (

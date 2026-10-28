@@ -11,7 +11,7 @@ import { withTaggedUrl } from "@/lib/amazon";
 
 const SAMPLES = {
   posts: SAMPLE_POSTS.map((p) => ({ ...p, sample: true })),
-  products: SAMPLE_PICKS.map((p) => ({ ...p, slug: null, sample: true })),
+  products: SAMPLE_PICKS.map((p) => ({ ...p, slug: p.slug || null, fave: true, photos: p.photos || [], sample: true })),
 };
 
 export function readingMinutes(text = "", { html = false } = {}) {
@@ -69,24 +69,105 @@ export async function getPosts({ limit = 60, category } = {}) {
   return { posts, sample: false };
 }
 
+const PICK_FIELDS = "slug, name, note, image_url, url, price_label, section, color, featured";
+
+// Until migration 0005 (faves) is run the new columns don't exist: reads
+// retry the old way and treat every live pick as a fave, as before.
+const missingColumn = (error) => error && (error.code === "42703" || error.code === "PGRST204" || /column .* does not exist/i.test(error.message || ""));
+
+async function withFaveFallback(run) {
+  const first = await run(true);
+  if (!missingColumn(first.error)) return first;
+  const old = await run(false);
+  return { ...old, data: old.data && old.data.map((p) => ({ ...p, fave: true })) };
+}
+
+// The shop: only picks marked as a fave. Picks made just for a card in a
+// post (a roundup of car seats) stay out.
 export async function getProducts({ limit = 200, featured } = {}) {
   const db = publicClient();
   if (!db) return { products: SAMPLES.products.slice(0, limit), sample: true };
-  let query = db
-    .from("products")
-    .select("slug, name, note, image_url, url, price_label, section, color, featured")
-    .eq("status", "published")
-    .order("featured", { ascending: false })
-    .order("sort", { ascending: true })
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (featured) query = query.eq("featured", true);
-  const { data, error } = await query;
+  const { data, error } = await withFaveFallback((faves) => {
+    let query = db
+      .from("products")
+      .select(faves ? `${PICK_FIELDS}, fave` : PICK_FIELDS)
+      .eq("status", "published")
+      .order("featured", { ascending: false })
+      .order("sort", { ascending: true })
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (faves) query = query.eq("fave", true);
+    if (featured) query = query.eq("featured", true);
+    return query;
+  });
   if (error) {
     console.error("getProducts failed", error.message);
     return { products: SAMPLES.products.slice(0, limit), sample: true };
   }
   return { products: data.map(withTaggedUrl), sample: false };
+}
+
+// One fave for its own page (/shop/<slug>), or null. A pick that isn't a
+// fave has no page.
+export async function getFave(slug) {
+  const db = publicClient();
+  if (!db) return SAMPLES.products.find((p) => p.slug === slug && p.details) || null;
+  const { data, error } = await db.from("products").select("*").eq("slug", slug).eq("status", "published").maybeSingle();
+  if (error) console.error("getFave failed", error.message);
+  if (!data || data.fave === false) return null;
+  return withTaggedUrl({ ...data, fave: true, photos: Array.isArray(data.photos) ? data.photos.filter(Boolean) : [] });
+}
+
+export async function getFaveSlugs() {
+  const db = publicClient();
+  if (!db) return SAMPLES.products.filter((p) => p.slug && p.details).map((p) => ({ slug: p.slug }));
+  const { data } = await withFaveFallback((faves) => {
+    const query = db.from("products").select("slug, updated_at").eq("status", "published");
+    return faves ? query.eq("fave", true) : query;
+  });
+  return data || [];
+}
+
+// How many live posts and recipes each pick is in, for the shop's cards.
+export async function getFeaturedCounts() {
+  const db = publicClient();
+  if (!db) return {};
+  const [{ data: own }, wp, { data: gear }] = await Promise.all([
+    db.from("posts").select("slug, body, wordpress_id").eq("status", "published"),
+    wordpressConfigured ? getWordpressPosts(100, { withContent: true }) : null,
+    db.from("recipes").select("gear").eq("status", "published"),
+  ]);
+  const counts = {};
+  const add = (slugs) => slugs.forEach((s) => (counts[s] = (counts[s] || 0) + 1));
+  (own || []).forEach((p) => add(productSlugsIn(p.body)));
+  (wp || []).filter(notCopied(own || [])).forEach((p) => add(productSlugsIn(p.html)));
+  (gear || []).forEach((r) => add([...new Set(r.gear || [])]));
+  return counts;
+}
+
+// Where a fave shows up: live posts with its card ({{product:slug}}), and
+// recipes that list it under "What I used" or sit in one of those posts.
+export async function getFeaturedIn(slug) {
+  const db = publicClient();
+  if (!db) return { posts: [], recipes: [] };
+  const has = (body) => productSlugsIn(body || "").includes(slug);
+  const [{ data: own }, wp, { data: gear, error: gearError }, recipeList] = await Promise.all([
+    db.from("posts").select(`${POST_FIELDS}, recipe_id`).eq("status", "published").order("published_at", { ascending: false }),
+    wordpressConfigured ? getWordpressPosts(100, { withContent: true }) : null,
+    db.from("recipes").select("id, slug").eq("status", "published").contains("gear", [slug]),
+    getRecipeList(),
+  ]);
+  if (gearError && !missingColumn(gearError)) console.error("getFeaturedIn gear failed", gearError.message);
+  const ownPosts = own || [];
+  const ownHits = ownPosts.filter((p) => has(p.body));
+  const wpHits = (wp || []).filter(notCopied(ownPosts)).filter((p) => has(p.html));
+  const posts = [...ownHits.map(toCard), ...wpHits.map(({ html, ...card }) => card)].sort((a, b) =>
+    (b.published_at || "").localeCompare(a.published_at || ""),
+  );
+  const recipeSlugs = new Set([...(gear || []).map((r) => r.slug), ...ownHits.flatMap((p) => recipeSlugsIn(p.body)), ...wpHits.flatMap((p) => recipeSlugsIn(p.html))]);
+  const attached = new Set(ownHits.map((p) => p.recipe_id).filter(Boolean));
+  const recipes = recipeList.filter((r) => r.href && (recipeSlugs.has(r.slug) || attached.has(r.id)));
+  return { posts, recipes };
 }
 
 // Cards in a post body: {{product:link-name}} and {{recipe:link-name}},
@@ -112,15 +193,27 @@ function tokenLines(html) {
   return html.replace(/<p[^>]*>\s*(\{\{\s*(?:product|recipe):[a-z0-9-]+\s*\}\})\s*<\/p>/g, "\n$1\n");
 }
 
-async function productsFor(db, body) {
-  const slugs = productSlugsIn(body);
+async function productsBySlug(db, slugs) {
   if (!db || !slugs.length) return [];
-  const { data } = await db
-    .from("products")
-    .select("slug, name, note, image_url, url, price_label, section, color")
-    .eq("status", "published")
-    .in("slug", slugs);
+  const { data } = await withFaveFallback((faves) =>
+    db
+      .from("products")
+      .select(faves ? `${PICK_FIELDS}, fave` : PICK_FIELDS)
+      .eq("status", "published")
+      .in("slug", slugs),
+  );
   return (data || []).map(withTaggedUrl);
+}
+
+const productsFor = (db, body) => productsBySlug(db, productSlugsIn(body));
+
+// Each recipe gets the live picks it lists under "What I used".
+async function withGear(db, recipes) {
+  const slugs = [...new Set(recipes.flatMap((r) => r?.gear || []))];
+  if (!slugs.length) return recipes;
+  const picks = await productsBySlug(db, slugs);
+  const bySlug = new Map(picks.map((p) => [p.slug, p]));
+  return recipes.map((r) => (r ? { ...r, gearProducts: (r.gear || []).map((s) => bySlug.get(s)).filter(Boolean) } : r));
 }
 
 // Recipes still in draft don't come back (RLS), so they aren't shown.
@@ -141,16 +234,17 @@ async function ownPost(db, slug) {
   if (error) console.error("getPost failed", error.message);
   if (!post) return null;
   // A recipe still in draft doesn't come back (RLS), so it isn't shown.
-  const [products, recipes] = await Promise.all([productsFor(db, post.body), recipesFor(db, post.body)]);
-  return { ...post, source: "admin", recipe: post.recipe || null, products, recipes };
+  const [products, found] = await Promise.all([productsFor(db, post.body), recipesFor(db, post.body)]);
+  const [recipe, ...recipes] = await withGear(db, [post.recipe || null, ...found]);
+  return { ...post, source: "admin", recipe, products, recipes };
 }
 
 async function wordpressPost(db, slug) {
   const post = await getWordpressPost(slug);
   if (!post) return null;
   const html = tokenLines(post.html);
-  const [products, recipes] = await Promise.all([productsFor(db, html), recipesFor(db, html)]);
-  return { ...post, html, recipe: null, products, recipes };
+  const [products, found] = await Promise.all([productsFor(db, html), recipesFor(db, html)]);
+  return { ...post, html, recipe: null, products, recipes: await withGear(db, found) };
 }
 
 export async function getPost(slug) {
@@ -207,6 +301,7 @@ export async function getRecipeList() {
   }
   for (const p of (wp || []).filter(notCopied(own))) place(p.slug, recipeSlugsIn(p.html || ""));
   return recipes.map((r) => ({
+    id: r.id,
     slug: r.slug,
     title: r.title,
     summary: r.summary || "",

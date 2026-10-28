@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { PickCard, ProductEmbed } from "@/components/Cards";
-import { useRecord } from "@/components/admin/useRecord";
+import RichEditor from "@/components/admin/RichEditor";
+import { useHasColumn, useRecord } from "@/components/admin/useRecord";
 import { useAdmin } from "@/components/admin/AdminShell";
-import { Button, Card, CopyCode, DeleteButton, Field, Notice, PhotoInput, Segmented, Select, TextArea, TextInput } from "@/components/admin/AdminUI";
+import { Button, Card, CopyCode, DeleteButton, Field, Notice, PhotoInput, RowTools, Segmented, Select, TextArea, TextInput, moveItem, uploadPhoto } from "@/components/admin/AdminUI";
 import { SHOP_SECTIONS } from "@/lib/content";
 import { cardToken } from "@/lib/data";
 import { slugify } from "@/lib/recipe";
@@ -22,9 +23,15 @@ const BLANK = {
   section: "baby",
   color: "pink",
   featured: false,
+  fave: false,
+  details: "",
+  photos: [],
   sort: 0,
   status: "draft",
 };
+
+const MAX_PHOTOS = 8;
+const NO_LIBRARY = { products: [], recipes: [], loaded: true };
 
 const COLORS = [
   { value: "pink", label: "Pink", cls: "bg-pink" },
@@ -33,7 +40,7 @@ const COLORS = [
   { value: "mint", label: "Mint", cls: "bg-mint" },
 ];
 
-const PATHS = ["/", "/shop", "/blog"];
+const pathsFor = (slug) => ["/", "/shop", "/blog", ...(slug ? [`/shop/${slug}`] : [])];
 
 function isHttps(url) {
   try {
@@ -45,7 +52,19 @@ function isHttps(url) {
 
 function ProductForm({ initial, rec }) {
   const { supabase } = useAdmin();
-  const [form, setForm] = useState(() => ({ ...BLANK, ...initial, note: initial.note || "", url: initial.url || "", price_label: initial.price_label || "" }));
+  // Fave, review and photos need migration 0005; until it's run the
+  // editor saves the old fields only and every live pick is in the shop.
+  const hasFaves = useHasColumn("products", "fave");
+  const [form, setForm] = useState(() => ({
+    ...BLANK,
+    ...initial,
+    note: initial.note || "",
+    url: initial.url || "",
+    price_label: initial.price_label || "",
+    details: initial.details || "",
+    photos: Array.isArray(initial.photos) ? initial.photos : [],
+    fave: initial.fave ?? false,
+  }));
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug));
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
@@ -64,6 +83,13 @@ function ProductForm({ initial, rec }) {
     featured: form.featured,
     sort: Number(form.sort) || 0,
     status: form.status,
+    ...(hasFaves ? { fave: form.fave, details: form.details.trim() || null, photos: form.photos.filter(Boolean) } : {}),
+  };
+  const PATHS = pathsFor(form.slug);
+  const uploadBodyPhoto = async (file) => {
+    const { url: uploaded, error } = await uploadPhoto(supabase, "products", file);
+    if (error) rec.setNotice({ type: "error", text: error });
+    return error ? null : uploaded;
   };
   return (
     <div className="space-y-5">
@@ -132,8 +158,25 @@ function ProductForm({ initial, rec }) {
               ))}
             </div>
           </div>
-          <label className="flex items-center gap-3 font-semibold">
-            <input type="checkbox" className="h-5 w-5 accent-[var(--pink)]" checked={form.featured} onChange={(e) => set({ featured: e.target.checked })} />
+          {hasFaves !== false && (
+            <label className="flex items-start gap-3 font-semibold">
+              <input type="checkbox" className="mt-0.5 h-5 w-5 accent-[var(--pink)]" checked={form.fave} onChange={(e) => set({ fave: e.target.checked, ...(e.target.checked ? {} : { featured: false }) })} />
+              <span>
+                It&rsquo;s one of my faves
+                <span className="block text-sm font-normal text-ink/60">
+                  Shows it in the shop with its own page. Leave it off for picks that are only in a post, like the other car seats in a roundup.
+                </span>
+              </span>
+            </label>
+          )}
+          <label className={`flex items-center gap-3 font-semibold ${hasFaves !== false && !form.fave ? "opacity-50" : ""}`}>
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[var(--pink)]"
+              checked={form.featured}
+              disabled={hasFaves !== false && !form.fave}
+              onChange={(e) => set({ featured: e.target.checked })}
+            />
             Show it on the home page
           </label>
           <Field label="Link name" hint="Lowercase letters, numbers and dashes. Posts use it to show this card.">
@@ -147,6 +190,38 @@ function ProductForm({ initial, rec }) {
           </Field>
         </div>
       </Card>
+
+      {hasFaves && form.fave && (
+        <Card title="Its page">
+          <p className="mb-4 text-ink/75">
+            Your faves each get a page{form.slug ? <> at <span className="font-semibold">/shop/{form.slug}</span></> : ""}. Go as deep as you like: how you use it, what you&rsquo;d change, photos of it in real life. Posts and recipes that use this pick show under it on their own.
+          </p>
+          <span className="mb-1.5 block font-display tracking-wide">More photos</span>
+          <div className="flex flex-wrap gap-4">
+            {form.photos.map((src, i) => (
+              <div key={src} className="space-y-1">
+                <PhotoInput supabase={supabase} folder="products" value={src} label={`Photo ${i + 2}`} onChange={(url) => set({ photos: url ? form.photos.map((p, j) => (j === i ? url : p)) : form.photos.filter((_, j) => j !== i) })} />
+                <RowTools index={i} count={form.photos.length} label={`photo ${i + 2}`} onMove={(index, dir) => set({ photos: moveItem(form.photos, index, dir) })} onRemove={() => set({ photos: form.photos.filter((_, j) => j !== i) })} />
+              </div>
+            ))}
+            {form.photos.length < MAX_PHOTOS && (
+              <PhotoInput key={form.photos.length} supabase={supabase} folder="products" value={null} label="Add a photo" onChange={(url) => url && set({ photos: [...form.photos, url] })} />
+            )}
+          </div>
+          <p className="mt-2 text-sm text-ink/60">The product photo above comes first. Up to {MAX_PHOTOS} more.</p>
+          <div className="mt-6">
+            <span className="mb-1.5 block font-display tracking-wide">Your review</span>
+            <RichEditor
+              value={form.details}
+              onChange={(details) => set({ details })}
+              library={NO_LIBRARY}
+              onUploadPhoto={uploadBodyPhoto}
+              placeholder="Why it's a fave, how you use it, anything you'd change…"
+            />
+            <p className="mt-2 text-sm text-ink/60">Optional. Headings, lists and photos all work, like in a post.</p>
+          </div>
+        </Card>
+      )}
 
       <Card title="Use it in a post">
         <p className="mb-3 text-ink/75">Paste this on its own line anywhere in a post and it shows there as a card with your link:</p>
@@ -173,7 +248,7 @@ function ProductForm({ initial, rec }) {
         <div>
           <h2 className="mb-3 font-display text-2xl tracking-wide">Preview</h2>
           <div className="grid gap-6 sm:grid-cols-[14rem_1fr] sm:items-start">
-            <PickCard pick={values} />
+            <PickCard pick={{ ...values, fave: false }} />
             <ProductEmbed product={values} />
           </div>
         </div>
