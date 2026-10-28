@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PickCard, ProductEmbed } from "@/components/Cards";
 import RichEditor from "@/components/admin/RichEditor";
 import { useHasColumn, useRecord } from "@/components/admin/useRecord";
@@ -11,7 +11,7 @@ import { Button, Card, CopyCode, DeleteButton, Field, Notice, PhotoInput, RowToo
 import { SHOP_SECTIONS } from "@/lib/content";
 import { cardToken, cleanDetails } from "@/lib/data";
 import { slugify } from "@/lib/recipe";
-import { amazonImageUrl, isAmazonUrl, withAmazonImage, withAmazonTag } from "@/lib/amazon";
+import { amazonImageUrl, isAmazonShortLink, isAmazonUrl, withAmazonImage, withAmazonTag } from "@/lib/amazon";
 
 const BLANK = {
   name: "",
@@ -85,6 +85,31 @@ function ProductForm({ initial, rec }) {
     status: form.status,
     ...(hasFaves ? { fave: form.fave, details: form.details.trim() || null, photos: form.photos.filter(Boolean) } : {}),
   };
+  // A short Amazon link names no product, so ask the server to follow it.
+  const [shortLink, setShortLink] = useState({ url: "", asin: null });
+  useEffect(() => {
+    if (!isAmazonShortLink(url)) return;
+    let live = true;
+    const timer = setTimeout(async () => {
+      let asin = null;
+      try {
+        const { data } = await supabase.auth.getSession();
+        const res = await fetch(`/api/admin/amazon-image?url=${encodeURIComponent(url)}`, {
+          headers: { Authorization: `Bearer ${data.session?.access_token || ""}` },
+        });
+        asin = (await res.json()).asin || null;
+      } catch {}
+      if (live) setShortLink({ url, asin });
+    }, 500);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [url, supabase]);
+  const shortAsin = shortLink.url === url ? shortLink.asin : null;
+  const checkingShort = isAmazonShortLink(url) && shortLink.url !== url;
+  const amazonPhoto = Boolean(amazonImageUrl(url) || shortAsin);
+
   const PATHS = pathsFor(form.slug);
   const uploadBodyPhoto = async (file) => {
     const { url: uploaded, error } = await uploadPhoto(supabase, "products", file);
@@ -135,11 +160,15 @@ function ProductForm({ initial, rec }) {
           </Field>
           <div className="sm:col-span-2">
             <PhotoInput supabase={supabase} folder="products" value={form.image_url} onChange={(image_url) => set({ image_url })} label="Product photo" />
-            {!form.image_url && url && (isAmazonUrl(url) || /^https:\/\/amzn\.to\//i.test(url)) && (
+            {!form.image_url && url && (isAmazonUrl(url) || isAmazonShortLink(url)) && (
               <p className="mt-2 text-sm text-ink/70">
-                {amazonImageUrl(url)
+                {amazonPhoto
                   ? "No photo? Amazon's own product photo shows instead. Add yours any time and it takes over."
-                  : "To show Amazon's product photo, paste the full amazon.com/dp/… link above (short amzn.to links don't work for photos), or add your own."}
+                  : checkingShort
+                    ? "Finding Amazon's product photo for this link…"
+                    : isAmazonShortLink(url)
+                      ? "Couldn't find the product behind this short link. Paste the full amazon.com/dp/… link instead, or add your own photo."
+                      : "This is a search link, so there's no one product to show. Paste the product's own amazon.com/dp/… link, or add your own photo."}
               </p>
             )}
           </div>
@@ -255,8 +284,8 @@ function ProductForm({ initial, rec }) {
         <div>
           <h2 className="mb-3 font-display text-2xl tracking-wide">Preview</h2>
           <div className="grid gap-6 sm:grid-cols-[14rem_1fr] sm:items-start">
-            <PickCard pick={withAmazonImage({ ...values, fave: false })} />
-            <ProductEmbed product={withAmazonImage(values)} />
+            <PickCard pick={withAmazonImage({ ...values, fave: false }, shortAsin)} />
+            <ProductEmbed product={withAmazonImage(values, shortAsin)} />
           </div>
         </div>
       )}
