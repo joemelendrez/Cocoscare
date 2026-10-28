@@ -37,7 +37,7 @@ function CardView({ node, deleteNode, selected }) {
       </span>
       <span className="min-w-0 flex-1 cursor-grab">
         <span className="block text-xs font-semibold uppercase tracking-wider text-pink-deep">{kind === "product" ? "Product card" : "Recipe card"}</span>
-        <span className="block truncate font-display text-lg tracking-wide">{item ? item.name || item.title : slug}</span>
+        <span className="block break-words font-display text-lg leading-snug tracking-wide">{item ? item.name || item.title : slug}</span>
         {!item && lib.loaded && <span className="block text-xs font-semibold text-pink-deep">Nothing has this link name, so it won&rsquo;t show.</span>}
       </span>
       <button type="button" onClick={deleteNode} className="shrink-0 rounded-full border-2 border-ink bg-paper px-3 py-1 text-sm font-semibold hover:bg-pink-soft">

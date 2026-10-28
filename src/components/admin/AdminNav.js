@@ -12,7 +12,8 @@ const JELLY = { type: "spring", stiffness: 420, damping: 22 };
 const STROKE = { fill: "none", stroke: "var(--ink)", strokeWidth: 3, strokeLinejoin: "round", strokeLinecap: "round" };
 
 export const ADMIN_NAV = [
-  { href: "/admin", label: "Posts", short: "Posts", color: "pink", icon: "pencil" },
+  { href: "/admin", label: "Home", short: "Home", color: "mint", icon: "home" },
+  { href: "/admin/posts", label: "Posts", short: "Posts", color: "pink", icon: "pencil" },
   { href: "/admin/recipes", label: "Recipes", short: "Recipes", color: "butter", icon: "whisk" },
   { href: "/admin/products", label: "Shop picks", short: "Shop", color: "periwinkle", icon: "bag" },
 ];
@@ -25,7 +26,7 @@ export const GROW_NAV = [
 ];
 
 export function navActive(pathname, href) {
-  return href === "/admin" ? pathname === "/admin" || pathname.startsWith("/admin/posts") : pathname.startsWith(href);
+  return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 }
 
 function NavIcon({ name, className }) {
@@ -34,6 +35,14 @@ function NavIcon({ name, className }) {
       <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
         <rect x="6" y="10" width="28" height="21" rx="3" {...STROKE} fill="var(--paper)" />
         <path d="M7 12l13 10 13-10" {...STROKE} />
+      </svg>
+    );
+  }
+  if (name === "home") {
+    return (
+      <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
+        <path d="M7 19L20 8l13 11v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1Z" {...STROKE} fill="var(--paper)" />
+        <path d="M16 33v-9h8v9" {...STROKE} fill="var(--butter)" />
       </svg>
     );
   }
@@ -184,7 +193,7 @@ export default function AdminNav({ pathname, email, onSignOut }) {
 
       <nav
         aria-label="Admin"
-        className="sticker fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 gap-1 rounded-full bg-paper p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] lg:hidden"
+        className="sticker fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 gap-0.5 rounded-full bg-paper p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] lg:hidden"
       >
         {ADMIN_NAV.map((item) => {
           const active = item.href === activeHref;

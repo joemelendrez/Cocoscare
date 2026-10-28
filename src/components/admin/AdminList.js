@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useAdmin } from "@/components/admin/AdminShell";
 import { Notice, Segmented, StatusPill } from "@/components/admin/AdminUI";
 
+// Names are shown in full (wrapping onto a second line), never cut off.
 // One list screen for posts, recipes and products: filter by status, tap a
 // row to edit, "New" to start one (left out when there's no newLabel).
 // `action(row)` adds a button beside each row (outside its link). Rows open
@@ -30,6 +31,7 @@ export default function AdminList({
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let live = true;
@@ -48,7 +50,10 @@ export default function AdminList({
     };
   }, [supabase, table, select]);
 
-  const shown = rows ? (filter === "all" ? rows : rows.filter((r) => r.status === filter)) : [];
+  const q = query.trim().toLowerCase();
+  const shown = (rows || []).filter(
+    (r) => (filter === "all" || r.status === filter) && (!q || `${r.title || r.name || ""}`.toLowerCase().includes(q)),
+  );
   const counts = Object.fromEntries(statuses.map((s) => [s.value, rows?.filter((r) => r.status === s.value).length || 0]));
 
   return (
@@ -79,6 +84,7 @@ export default function AdminList({
 
       {children}
 
+      <div className="flex flex-wrap items-center gap-3">
       <Segmented
         label="Filter"
         value={filter}
@@ -88,6 +94,17 @@ export default function AdminList({
           ...statuses.map((s) => ({ value: s.value, label: `${s.label} (${counts[s.value]})` })),
         ]}
       />
+        {rows?.length > 8 && (
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${title.toLowerCase()}`}
+            aria-label={`Search ${title.toLowerCase()}`}
+            className="min-w-0 flex-1 rounded-full border-[2.5px] border-ink bg-paper px-4 py-2 text-base outline-none focus:shadow-[3px_3px_0_var(--pink)] sm:max-w-xs"
+          />
+        )}
+      </div>
 
       <Notice notice={error ? { type: "error", text: error } : null} />
 
@@ -99,7 +116,7 @@ export default function AdminList({
         </div>
       ) : shown.length === 0 ? (
         <p className="rounded-[1.5rem] border-[3px] border-dashed border-ink/40 bg-paper p-8 text-center text-ink/60">
-          {emptyText}
+          {q ? `Nothing matches "${query.trim()}".` : emptyText}
         </p>
       ) : (
         <ul className="space-y-3">
@@ -137,8 +154,8 @@ export function RowThumb({ src, fallback }) {
 export function RowText({ title, sub }) {
   return (
     <span className="min-w-0 flex-1">
-      <span className="block truncate font-display text-lg tracking-wide">{title}</span>
-      {sub && <span className="block truncate text-sm text-ink/60">{sub}</span>}
+      <span className="block break-words font-display text-lg leading-snug tracking-wide">{title}</span>
+      {sub && <span className="mt-0.5 block break-words text-sm text-ink/60">{sub}</span>}
     </span>
   );
 }
