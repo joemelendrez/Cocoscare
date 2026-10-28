@@ -4,7 +4,6 @@ import { CopyCode } from "@/components/admin/AdminUI";
 import { cardToken } from "@/lib/data";
 import AdminList, { RowText, RowThumb } from "@/components/admin/AdminList";
 import { SHOP_SECTIONS } from "@/lib/content";
-import { amazonImageUrl } from "@/lib/amazon";
 
 const sectionLabel = (key) => SHOP_SECTIONS.find((s) => s.key === key)?.label || key;
 
@@ -25,7 +24,7 @@ export default function AdminProducts() {
       action={(r) => <CopyCode compact code={cardToken("product", r.slug)} />}
       render={(r) => (
         <>
-          <RowThumb src={r.image_url || amazonImageUrl(r.url)} fallback="💗" />
+          <RowThumb src={r.image_url} fallback="💗" />
           <RowText
             title={`${r.featured ? "★ " : ""}${r.name}`}
             sub={`${sectionLabel(r.section)} · ${r.fave === false ? "Post cards only" : "Fave, in the shop"}${r.url ? "" : " · no link yet"}`}
