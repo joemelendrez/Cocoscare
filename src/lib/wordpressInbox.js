@@ -26,11 +26,12 @@ const STATUS = { draft: "draft", pending: "draft", future: "scheduled", publish:
 // origin, and http → https counts as one, so WordPress would see a signed-out
 // request. Redirects within the same host are followed here with the login
 // kept; anything else is refused.
-async function request(login, path) {
+async function request(login, path, method = "GET") {
   const auth = Buffer.from(`${login.user}:${login.password}`).toString("base64");
   let url = new URL(`${login.site}/wp-json/wp/v2/${path}`);
   for (let hops = 0; hops < 4; hops++) {
     const res = await fetch(url, {
+      method,
       headers: { Authorization: `Basic ${auth}` },
       cache: "no-store",
       redirect: "manual",
@@ -80,8 +81,8 @@ export async function checkLogin(login) {
   return who.slug || login.user;
 }
 
-async function wp(login, path) {
-  const res = await request(login, path);
+async function wp(login, path, method) {
+  const res = await request(login, path, method);
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     const cantSeeDrafts = detail.code === "rest_invalid_param" && detail.data?.params?.status;
@@ -160,4 +161,15 @@ export async function postForImport(login, id) {
     body,
     cover_url: media?.source_url && /^https:\/\//.test(media.source_url) ? media.source_url : null,
   };
+}
+
+// Moves a post to WordPress's Trash (not a permanent delete: it can be
+// restored from wp-admin's Trash for 30 days). A post that's already gone
+// counts as done.
+export async function trashPost(login, id) {
+  try {
+    await wp(login, `posts/${Number(id)}?_fields=id`, "DELETE");
+  } catch (error) {
+    if (error.status !== 404 && !/already been trashed/i.test(error.message)) throw error;
+  }
 }

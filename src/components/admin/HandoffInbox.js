@@ -18,10 +18,11 @@ const STATE_LABEL = { draft: "Draft in Handoff Hero", scheduled: "Scheduled", li
 // Posts sent from Handoff Hero to the WordPress subsite that haven't been
 // pulled in yet. "Finish here" copies one into a draft post on this site.
 export function FromHandoffHero() {
-  const { supabase } = useAdmin();
+  const { supabase, refreshSite } = useAdmin();
   const router = useRouter();
   const [state, setState] = useState({ loading: true, configured: true, site: "", user: "", posts: [], error: "" });
   const [busy, setBusy] = useState(null);
+  const [confirming, setConfirming] = useState(null);
   const [notice, setNotice] = useState(null);
 
   const call = useCallback(
@@ -87,6 +88,23 @@ export function FromHandoffHero() {
     window.location.href = url.toString();
   };
 
+  // Moves the post to WordPress's Trash (restorable there for 30 days).
+  const trash = async (p) => {
+    if (busy) return;
+    setBusy(p.id);
+    setNotice(null);
+    try {
+      await call({ method: "DELETE", body: JSON.stringify({ id: p.id }) });
+      setState((s) => ({ ...s, posts: s.posts.filter((x) => x.id !== p.id) }));
+      setNotice({ type: "success", text: `Deleted "${p.title}". It's in WordPress's Trash for 30 days if you change your mind.` });
+      if (p.state === "live") refreshSite(["/", "/blog"]);
+    } catch (err) {
+      setNotice({ type: "error", text: err.message });
+    }
+    setConfirming(null);
+    setBusy(null);
+  };
+
   const finish = async (id) => {
     if (busy) return;
     setBusy(id);
@@ -148,9 +166,33 @@ export function FromHandoffHero() {
             {state.posts.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center gap-3 py-2.5">
                 <RowText title={p.title} sub={`${STATE_LABEL[p.state]}${p.modified ? ` · ${ago(p.modified)}` : ""}`} />
-                <Button className="py-1.5 text-sm" onClick={() => finish(p.id)} disabled={busy !== null}>
-                  {busy === p.id ? "Bringing it in…" : "Finish here"}
-                </Button>
+                {confirming === p.id ? (
+                  <span className="flex w-full flex-wrap items-center gap-2 rounded-2xl bg-pink-soft px-3 py-2 text-sm sm:w-auto">
+                    <span className="font-semibold">
+                      {p.state === "live" ? "Delete it? It comes off the blog too." : "Delete this draft?"}
+                    </span>
+                    <Button variant="danger" className="py-1 text-sm" onClick={() => trash(p)} disabled={busy !== null}>
+                      {busy === p.id ? "Deleting…" : "Yes, delete"}
+                    </Button>
+                    <Button variant="ghost" className="py-1 text-sm" onClick={() => setConfirming(null)} disabled={busy !== null}>
+                      Keep it
+                    </Button>
+                  </span>
+                ) : (
+                  <>
+                    <Button className="py-1.5 text-sm" onClick={() => finish(p.id)} disabled={busy !== null}>
+                      {busy === p.id ? "Bringing it in…" : "Finish here"}
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(p.id)}
+                      disabled={busy !== null}
+                      className="rounded-full px-3 py-1.5 text-sm font-semibold text-pink-deep hover:bg-pink-soft disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>
