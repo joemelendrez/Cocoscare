@@ -62,7 +62,7 @@ export function useRecord(table, id, blank, basePath) {
       return false;
     }
     if (paths.length) refreshSite(paths);
-    router.replace(basePath === "/admin/posts" ? "/admin" : basePath);
+    router.replace(basePath);
     return true;
   };
 
