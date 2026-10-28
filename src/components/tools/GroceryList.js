@@ -117,6 +117,11 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
   const adminToken = useAdminToken();
   const photoRef = useRef(null);
   const [scan, setScan] = useState({ busy: false, error: "" });
+  const [stapleTab, setStapleTab] = useState(STAPLES[0].label);
+  const staple = STAPLES.find((g) => g.label === stapleTab) || STAPLES[0];
+  const [show, setShow] = useState("all");
+  const [aisleFilter, setAisleFilter] = useState(null);
+  const [folded, setFolded] = useState({});
 
   useEffect(() => {
     const saved = loadGroceryList();
@@ -127,13 +132,17 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
         setAdded(new Set(saved.added || []));
         if (saved.byAisle === false) setByAisle(false);
         if (saved.mode === "paste") setMode("paste");
+        if (["left", "got"].includes(saved.show)) setShow(saved.show);
       }
       setUsuals(loadUsuals());
       setLoaded(true);
     });
     return () => cancelAnimationFrame(frame);
   }, []);
-  const saved = useMemo(() => ({ text, got: [...got], added: [...added], byAisle, mode }), [text, got, added, byAisle, mode]);
+  const saved = useMemo(
+    () => ({ text, got: [...got], added: [...added], byAisle, mode, show }),
+    [text, got, added, byAisle, mode, show],
+  );
   const sync = useSyncedSave(GROCERY_KEY, "grocery", saved, {
     loaded,
     apply: (v) => {
@@ -142,6 +151,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
       setAdded(new Set(v.added || []));
       setByAisle(v.byAisle !== false);
       setMode(v.mode === "paste" ? "paste" : "build");
+      setShow(["left", "got"].includes(v.show) ? v.show : "all");
     },
   });
 
@@ -149,6 +159,25 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
   const keyOf = (i) => ingredientText(i).toLowerCase();
   const left = items.filter((i) => !got.has(keyOf(i)));
   const groups = useMemo(() => (byAisle ? groupByAisle(items) : [{ aisle: null, items }]), [items, byAisle]);
+
+  // A picked aisle that's since been emptied falls back to every aisle.
+  const aisle = byAisle && groups.some((g) => g.aisle?.key === aisleFilter) ? aisleFilter : null;
+
+  // What the list shows: one aisle or all of them, filtered to what's left
+  // or what's ticked, with ticked items sinking to the bottom of each aisle.
+  const shown = groups
+    .filter((g) => !aisle || g.aisle?.key === aisle)
+    .map((g) => {
+      const todo = g.items.filter((i) => !got.has(keyOf(i)));
+      const done = g.items.filter((i) => got.has(keyOf(i)));
+      const list = show === "left" ? todo : show === "got" ? done : [...todo, ...done];
+      return { ...g, items: list, todo: todo.length };
+    })
+    .filter((g) => g.items.length);
+
+  // An aisle folds itself away once everything in it is ticked, unless the
+  // reader opened or closed it by hand.
+  const isGroupFolded = (g) => folded[g.aisle.key] ?? (show === "all" && g.todo === 0);
 
   function toggle(i) {
     const k = keyOf(i);
@@ -281,9 +310,11 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.15fr]">
-        <div className="rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--shadow)] sm:p-6">
+        <div className="min-w-0 rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--shadow)] sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-2xl tracking-wide">{mode === "build" ? "Make your list" : "Paste your list"}</h2>
+            <h2 className="font-display text-2xl tracking-wide">
+              {mode === "build" ? "Make your list" : "Paste your list"}
+            </h2>
             <div
               className="inline-flex rounded-full border-2 border-ink p-0.5 text-sm font-semibold"
               role="group"
@@ -347,7 +378,11 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                 <div className="mt-5">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="font-display text-lg tracking-wide">My usuals</h3>
-                    <button type="button" onClick={addUsuals} className="text-sm font-semibold text-pink-deep hover:underline">
+                    <button
+                      type="button"
+                      onClick={addUsuals}
+                      className="text-sm font-semibold text-pink-deep hover:underline"
+                    >
                       Add them all
                     </button>
                   </div>
@@ -355,21 +390,41 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                 </div>
               )}
 
-              <div className="mt-5 space-y-3">
+              <div className="mt-5">
                 <h3 className="font-display text-lg tracking-wide">Quick add</h3>
-                {STAPLES.map((g) => (
-                  <div key={g.label}>
-                    <p className="text-xs font-bold uppercase tracking-wider text-ink/50">{g.label}</p>
-                    <Chips items={g.items} onList={onList} onAdd={addLine} />
-                  </div>
-                ))}
+                <div
+                  className="-mx-1 mt-1.5 flex gap-1.5 overflow-x-auto px-1 pb-1"
+                  role="tablist"
+                  aria-label="Quick add groups"
+                >
+                  {STAPLES.map((g) => {
+                    const on = g.label === staple.label;
+                    const count = g.items.filter(onList).length;
+                    return (
+                      <button
+                        key={g.label}
+                        type="button"
+                        role="tab"
+                        aria-selected={on}
+                        onClick={() => setStapleTab(g.label)}
+                        className={`shrink-0 rounded-full border-2 border-ink px-3 py-0.5 text-sm font-semibold ${on ? "bg-ink text-paper" : "bg-paper hover:bg-butter"}`}
+                      >
+                        {g.label}
+                        {count > 0 && <span className={on ? "text-paper/70" : "text-ink/50"}> · {count}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div role="tabpanel" aria-label={staple.label}>
+                  <Chips items={staple.items} onList={onList} onAdd={addLine} />
+                </div>
               </div>
             </>
           ) : (
             <>
               <label htmlFor="grocery-text" className="mt-1 block text-sm font-medium text-ink/70">
-                One item per line, straight from your notes app or a text. Amounts like &ldquo;2 lbs&rdquo; or &ldquo;x2&rdquo;
-                are fine.
+                One item per line, straight from your notes app or a text. Amounts like &ldquo;2 lbs&rdquo; or
+                &ldquo;x2&rdquo; are fine.
               </label>
               <textarea
                 id="grocery-text"
@@ -432,7 +487,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
           {scan.error && <p className="mt-2 text-sm font-semibold text-pink-deep">{scan.error}</p>}
         </div>
 
-        <div className="rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--pink)] sm:p-6">
+        <div className="min-w-0 rounded-[2rem] border-[3px] border-ink bg-paper p-5 shadow-[6px_6px_0_var(--pink)] sm:p-6">
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="font-display text-2xl tracking-wide">Your list</h2>
             {items.length > 0 && (
@@ -488,23 +543,39 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                 <div
                   className="inline-flex rounded-full border-2 border-ink p-0.5 text-sm font-semibold"
                   role="group"
-                  aria-label="Order"
+                  aria-label="Show"
                 >
                   {[
-                    [true, "By aisle"],
-                    [false, "As typed"],
-                  ].map(([value, label]) => (
+                    ["all", "All", items.length],
+                    ["left", "To get", left.length],
+                    ["got", "Got it", items.length - left.length],
+                  ].map(([value, label, count]) => (
                     <button
-                      key={label}
+                      key={value}
                       type="button"
-                      onClick={() => setByAisle(value)}
-                      aria-pressed={byAisle === value}
-                      className={`rounded-full px-3 py-0.5 ${byAisle === value ? "bg-ink text-paper" : ""}`}
+                      onClick={() => setShow(value)}
+                      aria-pressed={show === value}
+                      className={`rounded-full px-3 py-0.5 ${show === value ? "bg-ink text-paper" : ""}`}
                     >
-                      {label}
+                      {label} <span className={show === value ? "text-paper/70" : "text-ink/50"}>{count}</span>
                     </button>
                   ))}
                 </div>
+                <label className="sr-only" htmlFor="grocery-order">
+                  Order
+                </label>
+                <select
+                  id="grocery-order"
+                  value={byAisle ? "aisle" : "typed"}
+                  onChange={(e) => {
+                    setByAisle(e.target.value === "aisle");
+                    setAisleFilter(null);
+                  }}
+                  className="rounded-full border-2 border-ink bg-paper px-3 py-1 text-sm font-semibold"
+                >
+                  <option value="aisle">By aisle</option>
+                  <option value="typed">As typed</option>
+                </select>
                 {got.size > 0 && left.length < items.length && (
                   <button
                     type="button"
@@ -516,91 +587,160 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                 )}
               </div>
 
-              <div className="mt-3 space-y-4">
-                {groups.map((group) => (
-                  <section key={group.aisle?.key || "all"}>
-                    {group.aisle && (
-                      <h3 className="flex items-center gap-2 font-display text-lg tracking-wide">
-                        <span className={`h-3 w-3 rounded-full border-2 border-ink ${group.aisle.color}`} aria-hidden />
-                        {group.aisle.label}
-                        <span className="font-sans text-xs font-semibold text-ink/50">{group.items.length}</span>
-                      </h3>
-                    )}
-                    <ul className="divide-y-2 divide-ink/10">
-                      <AnimatePresence initial={false}>
-                        {group.items.map((item) => {
-                          const k = keyOf(item);
-                          const done = got.has(k);
-                          return (
-                            <motion.li
-                              key={k}
-                              layout
-                              initial={{ opacity: 0, y: -6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="flex items-center gap-2 py-2"
+              {byAisle && groups.length > 1 && (
+                <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Aisle">
+                  {[{ aisle: null, items }, ...groups].map((g) => {
+                    const key = g.aisle?.key || null;
+                    const on = aisle === key;
+                    const todo = g.items.filter((i) => !got.has(keyOf(i))).length;
+                    return (
+                      <button
+                        key={key || "all"}
+                        type="button"
+                        onClick={() => setAisleFilter(key)}
+                        aria-pressed={on}
+                        className={`flex shrink-0 items-center gap-1.5 rounded-full border-2 border-ink px-3 py-0.5 text-sm font-semibold ${on ? "bg-ink text-paper" : "bg-paper hover:bg-butter"}`}
+                      >
+                        {g.aisle && (
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full border-2 border-ink ${g.aisle.color}`}
+                            aria-hidden
+                          />
+                        )}
+                        {g.aisle ? g.aisle.label : "Every aisle"}
+                        <span className={on ? "text-paper/70" : "text-ink/50"}>{todo || "✓"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {shown.length === 0 && (
+                <p className="mt-4 rounded-2xl border-2 border-dashed border-ink/30 px-4 py-6 text-center font-medium text-ink/60">
+                  {show === "got" ? "Nothing ticked off yet." : "All done here! 🎉"}
+                </p>
+              )}
+
+              <div className="mt-3 space-y-3">
+                {shown.map((group) => {
+                  const key = group.aisle?.key || "all";
+                  const isFolded = group.aisle && isGroupFolded(group);
+                  return (
+                    <section key={key}>
+                      {group.aisle && (
+                        <h3>
+                          <button
+                            type="button"
+                            onClick={() => setFolded((f) => ({ ...f, [key]: !isFolded }))}
+                            aria-expanded={!isFolded}
+                            className="flex w-full items-center gap-2 rounded-xl py-1 text-left font-display text-lg tracking-wide hover:bg-butter/40"
+                          >
+                            <span
+                              className={`h-3 w-3 shrink-0 rounded-full border-2 border-ink ${group.aisle.color}`}
+                              aria-hidden
+                            />
+                            <span className="min-w-0 flex-1">{group.aisle.label}</span>
+                            <span className="font-sans text-xs font-semibold text-ink/50">
+                              {group.todo ? `${group.todo} to get` : "All got ✓"}
+                            </span>
+                            <motion.span
+                              aria-hidden
+                              animate={{ rotate: isFolded ? -90 : 0 }}
+                              className="grid h-6 w-6 shrink-0 place-items-center font-sans text-sm text-ink/60"
                             >
-                              {editing === k ? (
-                                <input
-                                  autoFocus
-                                  defaultValue={ingredientText(item)}
-                                  aria-label={`Edit ${item.item}`}
-                                  maxLength={MAX_ITEM_CHARS}
-                                  onBlur={(e) => saveEdit(item, e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") e.currentTarget.blur();
-                                    if (e.key === "Escape") setEditing(null);
-                                  }}
-                                  className="min-w-0 flex-1 rounded-xl border-[2.5px] border-ink bg-paper px-3 py-1 font-medium outline-none focus:shadow-[3px_3px_0_var(--pink)]"
-                                />
-                              ) : (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => toggle(item)}
-                                    aria-pressed={done}
-                                    className={`flex min-w-0 flex-1 items-center gap-3 text-left ${done ? "text-ink/45 line-through" : ""}`}
+                              ▾
+                            </motion.span>
+                          </button>
+                        </h3>
+                      )}
+                      <AnimatePresence initial={false}>
+                        {!isFolded && (
+                          <motion.ul
+                            key="items"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="divide-y-2 divide-ink/10 overflow-hidden"
+                          >
+                            <AnimatePresence initial={false}>
+                              {group.items.map((item) => {
+                                const k = keyOf(item);
+                                const done = got.has(k);
+                                return (
+                                  <motion.li
+                                    key={k}
+                                    layout
+                                    initial={{ opacity: 0, y: -6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="flex items-center gap-2 py-2"
                                   >
-                                    <span
-                                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-[2.5px] border-ink ${done ? "bg-mint" : "bg-paper"}`}
+                                    {editing === k ? (
+                                      <input
+                                        autoFocus
+                                        defaultValue={ingredientText(item)}
+                                        aria-label={`Edit ${item.item}`}
+                                        maxLength={MAX_ITEM_CHARS}
+                                        onBlur={(e) => saveEdit(item, e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") e.currentTarget.blur();
+                                          if (e.key === "Escape") setEditing(null);
+                                        }}
+                                        className="min-w-0 flex-1 rounded-xl border-[2.5px] border-ink bg-paper px-3 py-1 font-medium outline-none focus:shadow-[3px_3px_0_var(--pink)]"
+                                      />
+                                    ) : (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => toggle(item)}
+                                          aria-pressed={done}
+                                          className={`flex min-w-0 flex-1 items-center gap-3 text-left ${done ? "text-ink/45 line-through" : ""}`}
+                                        >
+                                          <span
+                                            className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-[2.5px] border-ink ${done ? "bg-mint" : "bg-paper"}`}
+                                          >
+                                            {done && <span className="text-sm font-bold">✓</span>}
+                                          </span>
+                                          <span className="min-w-0 break-words font-medium">
+                                            {ingredientText(item)}
+                                          </span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditing(k)}
+                                          aria-label={`Edit ${item.item}`}
+                                          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink/50 hover:bg-butter hover:text-ink"
+                                        >
+                                          ✎
+                                        </button>
+                                      </>
+                                    )}
+                                    <a
+                                      href={walmartUrl(item.item, walmartLink)}
+                                      target="_blank"
+                                      rel={`noopener${walmartLink ? " sponsored" : ""}`}
+                                      className="shrink-0 rounded-full border-2 border-ink px-2.5 py-0.5 text-xs font-semibold hover:bg-butter sm:px-3 sm:text-sm"
                                     >
-                                      {done && <span className="text-sm font-bold">✓</span>}
-                                    </span>
-                                    <span className="min-w-0 break-words font-medium">{ingredientText(item)}</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditing(k)}
-                                    aria-label={`Edit ${item.item}`}
-                                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink/50 hover:bg-butter hover:text-ink"
-                                  >
-                                    ✎
-                                  </button>
-                                </>
-                              )}
-                              <a
-                                href={walmartUrl(item.item, walmartLink)}
-                                target="_blank"
-                                rel={`noopener${walmartLink ? " sponsored" : ""}`}
-                                className="shrink-0 rounded-full border-2 border-ink px-3 py-0.5 text-sm font-semibold hover:bg-butter"
-                              >
-                                Walmart ↗
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => remove(item)}
-                                aria-label={`Remove ${item.item}`}
-                                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-lg text-ink/50 hover:bg-blush hover:text-ink"
-                              >
-                                ×
-                              </button>
-                            </motion.li>
-                          );
-                        })}
+                                      Walmart ↗
+                                    </a>
+                                    <button
+                                      type="button"
+                                      onClick={() => remove(item)}
+                                      aria-label={`Remove ${item.item}`}
+                                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-lg text-ink/50 hover:bg-blush hover:text-ink"
+                                    >
+                                      ×
+                                    </button>
+                                  </motion.li>
+                                );
+                              })}
+                            </AnimatePresence>
+                          </motion.ul>
+                        )}
                       </AnimatePresence>
-                    </ul>
-                  </section>
-                ))}
+                    </section>
+                  );
+                })}
               </div>
               <p className="mt-3 text-xs text-ink/55">
                 Tap an item to tick it off in the store. <SyncNote sync={sync} />
