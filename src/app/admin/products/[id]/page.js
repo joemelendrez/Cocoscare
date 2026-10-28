@@ -11,7 +11,7 @@ import { Button, Card, CopyCode, DeleteButton, Field, Notice, PhotoInput, RowToo
 import { SHOP_SECTIONS } from "@/lib/content";
 import { cardToken, cleanDetails } from "@/lib/data";
 import { slugify } from "@/lib/recipe";
-import { withAmazonTag } from "@/lib/amazon";
+import { amazonImageUrl, isAmazonUrl, withAmazonImage, withAmazonTag } from "@/lib/amazon";
 
 const BLANK = {
   name: "",
@@ -135,6 +135,13 @@ function ProductForm({ initial, rec }) {
           </Field>
           <div className="sm:col-span-2">
             <PhotoInput supabase={supabase} folder="products" value={form.image_url} onChange={(image_url) => set({ image_url })} label="Product photo" />
+            {!form.image_url && url && (isAmazonUrl(url) || /^https:\/\/amzn\.to\//i.test(url)) && (
+              <p className="mt-2 text-sm text-ink/70">
+                {amazonImageUrl(url)
+                  ? "No photo? Amazon's own product photo shows instead. Add yours any time and it takes over."
+                  : "To show Amazon's product photo, paste the full amazon.com/dp/… link above (short amzn.to links don't work for photos), or add your own."}
+              </p>
+            )}
           </div>
         </div>
       </Card>
@@ -248,8 +255,8 @@ function ProductForm({ initial, rec }) {
         <div>
           <h2 className="mb-3 font-display text-2xl tracking-wide">Preview</h2>
           <div className="grid gap-6 sm:grid-cols-[14rem_1fr] sm:items-start">
-            <PickCard pick={{ ...values, fave: false }} />
-            <ProductEmbed product={values} />
+            <PickCard pick={withAmazonImage({ ...values, fave: false })} />
+            <ProductEmbed product={withAmazonImage(values)} />
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import { publicClient } from "@/lib/supabase";
 import { SAMPLE_PICKS, SAMPLE_POSTS } from "@/lib/content";
 import { getWordpressPost, getWordpressPosts, stripTags, wordpressConfigured } from "@/lib/wordpress";
-import { withTaggedUrl } from "@/lib/amazon";
+import { forShop } from "@/lib/amazon";
 
 // Reads published content: posts written in /admin and recipes and picks
 // from Coco's Supabase project, plus live posts sent from Handoff Hero to
@@ -104,7 +104,7 @@ export async function getProducts({ limit = 200, featured } = {}) {
     console.error("getProducts failed", error.message);
     return { products: SAMPLES.products.slice(0, limit), sample: true };
   }
-  return { products: data.map(withTaggedUrl), sample: false };
+  return { products: data.map(forShop), sample: false };
 }
 
 // A review is written in the editor, which has no code blocks, so leading
@@ -120,7 +120,7 @@ export async function getFave(slug) {
   const { data, error } = await db.from("products").select("*").eq("slug", slug).eq("status", "published").maybeSingle();
   if (error) console.error("getFave failed", error.message);
   if (!data || data.fave === false) return null;
-  return withTaggedUrl({ ...data, fave: true, details: cleanDetails(data.details), photos: Array.isArray(data.photos) ? data.photos.filter(Boolean) : [] });
+  return forShop({ ...data, fave: true, details: cleanDetails(data.details), photos: Array.isArray(data.photos) ? data.photos.filter(Boolean) : [] });
 }
 
 export async function getFaveSlugs() {
@@ -207,7 +207,7 @@ async function productsBySlug(db, slugs) {
       .eq("status", "published")
       .in("slug", slugs),
   );
-  return (data || []).map(withTaggedUrl);
+  return (data || []).map(forShop);
 }
 
 const productsFor = (db, body) => productsBySlug(db, productSlugsIn(body));
