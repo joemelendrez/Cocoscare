@@ -4,9 +4,9 @@ import { useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 
 // Light/dark switch. The theme lives on <html data-theme>, set before the
-// page paints by THEME_SCRIPT (saved choice, else the phone's setting), so
+// page paints by THEME_SCRIPT (saved choice, else light), so
 // there's no white flash; this only flips it and remembers the choice.
-export const THEME_SCRIPT = `try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){}`;
+export const THEME_SCRIPT = `try{var t=localStorage.getItem("theme");if(t!=="dark")t="light";document.documentElement.dataset.theme=t}catch(e){}`;
 
 const subscribe = (cb) => {
   window.addEventListener("themechange", cb);
