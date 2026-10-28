@@ -8,6 +8,7 @@ import SaveButton from "@/components/SaveButton";
 import ShopRecipe from "@/components/ShopRecipe";
 import Link from "next/link";
 import { favePath } from "@/components/Cards";
+import { SITE } from "@/lib/content";
 import { formatAmount, formatClock, formatMinutes } from "@/lib/recipe";
 
 // Two soft chimes, made with Web Audio so there's no sound file to load.
@@ -66,10 +67,10 @@ if (typeof window !== "undefined") {
 const PILL =
   "rounded-full border-2 border-ink bg-paper px-3 py-1 text-sm font-semibold text-ink transition-colors hover:bg-blush";
 
-function Stat({ label, value }) {
+function Stat({ label, value, print = false }) {
   if (!value) return null;
   return (
-    <div className="rounded-2xl border-[2.5px] border-ink bg-paper px-3 py-2 text-center">
+    <div className={`${print ? "hidden print:block " : ""}rounded-2xl border-[2.5px] border-ink bg-paper px-3 py-2 text-center`}>
       <p className="text-xs font-semibold uppercase tracking-wider text-ink/60">{label}</p>
       <p className="font-display text-lg tracking-wide">{value}</p>
     </div>
@@ -306,14 +307,15 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
       className="recipe-card sticker scroll-mt-28 overflow-hidden rounded-[2rem] bg-paper"
     >
       <div
-        className={`dots relative border-ink bg-pink p-6 text-paper sm:p-8 ${open ? "border-b-[3px]" : "print:border-b-[3px]"}`}
+        className={`rc-head dots relative border-ink bg-pink p-6 text-paper sm:p-8 ${open ? "border-b-[3px]" : "print:border-b-[3px]"}`}
       >
-        <span className="sticker-sm inline-flex -rotate-2 items-center gap-1.5 rounded-full bg-butter px-3 py-1 font-display tracking-wide text-ink">
+        <span className="rc-badge sticker-sm inline-flex -rotate-2 items-center gap-1.5 rounded-full bg-butter px-3 py-1 font-display tracking-wide text-ink">
           <Sparkle className="h-4 w-4" fill="var(--paper)" /> Recipe card
         </span>
-        <h2 className="mt-3 font-display text-4xl leading-tight tracking-wide text-outline sm:text-5xl">{recipe.title}</h2>
-        {recipe.summary && <p className="mt-2 max-w-2xl text-lg font-medium">{recipe.summary}</p>}
-        <div className="mt-5 grid grid-cols-3 gap-2 text-ink sm:max-w-md">
+        <h2 className="rc-title mt-3 font-display text-4xl leading-tight tracking-wide text-outline sm:text-5xl">{recipe.title}</h2>
+        {recipe.summary && <p className="rc-summary mt-2 max-w-2xl text-lg font-medium">{recipe.summary}</p>}
+        <div className="rc-stats mt-5 grid grid-cols-3 gap-2 text-ink sm:max-w-md">
+          <Stat label="Serves" value={servings} print />
           <Stat label="Prep" value={formatMinutes(recipe.prep_minutes)} />
           <Stat label="Cook" value={formatMinutes(recipe.cook_minutes)} />
           <Stat label="Total" value={formatMinutes(total)} />
@@ -399,7 +401,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
 
       <div
         id={id ? `${id}-body` : undefined}
-        className={`gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_1.4fr] ${open ? "grid" : "hidden print:grid"}`}
+        className={`rc-body gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_1.4fr] ${open ? "grid" : "hidden print:grid"}`}
       >
         <div>
           <div className="flex items-center justify-between gap-3">
@@ -426,7 +428,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
               </button>
             </div>
           </div>
-          <ul className="mt-4 space-y-2">
+          <ul className="rc-ings mt-4 space-y-2">
             {ingredients.map((ing, i) => {
               const checked = have.has(i);
               return (
@@ -454,7 +456,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
 
         <div>
           <h3 className="font-display text-2xl tracking-wide">Steps</h3>
-          <ol className="mt-4 space-y-4">
+          <ol className="rc-steps mt-4 space-y-4">
             {steps.map((step, i) => {
               const done = doneSteps.has(i);
               const t = timers[i];
@@ -464,7 +466,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
               return (
                 <li
                   key={i}
-                  className={`rounded-[1.5rem] border-[2.5px] border-ink p-4 transition-colors ${done ? "bg-mint/40" : "bg-paper"}`}
+                  className={`rc-step rounded-[1.5rem] border-[2.5px] border-ink p-4 transition-colors ${done ? "bg-mint/40" : "bg-paper"}`}
                 >
                   <div className="flex items-start gap-3">
                     <button
@@ -472,7 +474,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
                       onClick={() => toggle(setDoneSteps, i)}
                       aria-pressed={done}
                       aria-label={`Step ${i + 1} ${done ? "done" : "not done"}`}
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border-[2.5px] border-ink font-display text-lg ${done ? "bg-mint" : "bg-butter"}`}
+                      className={`rc-num grid h-9 w-9 shrink-0 place-items-center rounded-full border-[2.5px] border-ink font-display text-lg ${done ? "bg-mint" : "bg-butter"}`}
                     >
                       {done ? "✓" : i + 1}
                     </button>
@@ -542,7 +544,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
             })}
           </ol>
           {recipe.tips && (
-            <div className="mt-6 rounded-[1.5rem] border-[2.5px] border-dashed border-ink bg-butter/30 p-4">
+            <div className="rc-tips mt-6 rounded-[1.5rem] border-[2.5px] border-dashed border-ink bg-butter/30 p-4">
               <p className="font-display text-lg tracking-wide">Coco&rsquo;s tips</p>
               <p className="mt-1 whitespace-pre-line">{recipe.tips}</p>
             </div>
@@ -550,6 +552,7 @@ export default function RecipeCard({ recipe, pinUrl, anchor = true, emailFrom, s
           {recipe.gearProducts?.length > 0 && <WhatIUsed products={recipe.gearProducts} />}
         </div>
       </div>
+      <p className="rc-source hidden">{SITE.name} · {SITE.url.replace(/^https?:\/\//, "")}</p>
     </section>
   );
 }
