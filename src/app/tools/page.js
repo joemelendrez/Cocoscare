@@ -2,6 +2,7 @@ import Link from "next/link";
 import PageHero from "@/components/PageHero";
 import { GroceryBag, KiteDoodle, MeasuringCup, PlannerDoodle } from "@/components/Doodles";
 import { Reveal } from "@/components/Motion";
+import { TOOLS as TOOL_LIST } from "@/lib/tools";
 
 export const metadata = {
   title: "Free Tools for Busy Moms",
@@ -10,38 +11,16 @@ export const metadata = {
   alternates: { canonical: "/tools" },
 };
 
-// Add a tool here once its page exists.
-const TOOLS = [
-  {
-    href: "/tools/grocery-list",
-    title: "Grocery list helper",
-    blurb:
-      "Paste your list or add a recipe. It sorts by aisle, then send it to Instacart, search it at Walmart, or tick it off in the store.",
-    color: "bg-mint",
-    Icon: GroceryBag,
-  },
-  {
-    href: "/tools/meal-planner",
-    title: "Meal planner",
-    blurb: "Plan the week's dinners, fill empty nights with easy recipes, and send every ingredient to your grocery list.",
-    color: "bg-butter",
-    Icon: PlannerDoodle,
-  },
-  {
-    href: "/tools/kitchen-converter",
-    title: "Kitchen converter",
-    blurb: "Cups to grams, °F to °C, and any recipe doubled or halved in one go.",
-    color: "bg-periwinkle",
-    Icon: MeasuringCup,
-  },
-  {
-    href: "/tools/boredom-buster",
-    title: "Boredom buster",
-    blurb: "Pick an age and inside or out, and get an easy activity with what you need and how to do it.",
-    color: "bg-blush",
-    Icon: KiteDoodle,
-  },
-];
+// Color and doodle per tool (the list itself is in src/lib/tools.js).
+const LOOK = {
+  "/tools/grocery-list": { color: "bg-mint", Icon: GroceryBag },
+  "/tools/meal-planner": { color: "bg-butter", Icon: PlannerDoodle },
+  "/tools/kitchen-converter": { color: "bg-periwinkle", Icon: MeasuringCup },
+  "/tools/boredom-buster": { color: "bg-blush", Icon: KiteDoodle },
+};
+
+
+const TOOLS = TOOL_LIST.map((t) => ({ ...t, ...LOOK[t.href] }));
 
 export default function ToolsPage() {
   return (
