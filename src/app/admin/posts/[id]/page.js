@@ -8,7 +8,7 @@ import { ProductEmbed } from "@/components/Cards";
 import { useRecord } from "@/components/admin/useRecord";
 import { RowThumb } from "@/components/admin/AdminList";
 import { useAdmin } from "@/components/admin/AdminShell";
-import { Button, Card, DeleteButton, Field, Notice, PhotoInput, Segmented, Select, StatusPill, TextArea, TextInput, friendlyError, uploadPhoto } from "@/components/admin/AdminUI";
+import { Button, Card, DeleteButton, adminFetch, Field, Notice, PhotoInput, Segmented, Select, StatusPill, TextArea, TextInput, friendlyError, uploadPhoto } from "@/components/admin/AdminUI";
 import { CATEGORIES } from "@/lib/content";
 import { productSlugsIn, recipeSlugsIn } from "@/lib/data";
 import { bodySegments } from "@/lib/postBody";
@@ -144,6 +144,21 @@ function PostForm({ initial, rec, startRecipeId }) {
   };
 
   const segments = bodySegments(form.body, { products: usedProducts, recipes: usedRecipes });
+
+  // A post pulled in from Handoff Hero also has a WordPress copy. That goes
+  // to WordPress's Trash first, or the inbox would offer it again.
+  const removePost = async () => {
+    if (rec.record.wordpress_id) {
+      try {
+        await adminFetch(supabase, "/api/admin/wordpress", { method: "DELETE", body: JSON.stringify({ id: rec.record.wordpress_id }) });
+      } catch (err) {
+        rec.setNotice({ type: "error", text: `Couldn't delete the WordPress copy, so nothing was deleted. ${err.message}` });
+        return false;
+      }
+    }
+    setBaseline(snapshot(form));
+    return rec.remove(["/", "/blog", `/blog/${rec.record.slug}`]);
+  };
 
   // Unsaved changes: warn before leaving, and Ctrl/Cmd+S saves.
   const dirty = snapshot(form) !== baseline;
@@ -404,8 +419,11 @@ function PostForm({ initial, rec, startRecipeId }) {
           </Card>
 
           {!rec.isNew && (
-            <div className="flex justify-end">
-              <DeleteButton onDelete={() => rec.remove(["/", "/blog", `/blog/${rec.record.slug}`])} label="Delete post" />
+            <div className="flex flex-col items-end gap-1.5 text-right">
+              <DeleteButton onDelete={removePost} label="Delete post" />
+              <p className="text-xs text-ink/55">
+                Takes it off the blog for good.{rec.record.wordpress_id ? " Its WordPress copy goes to WordPress's Trash." : ""}
+              </p>
             </div>
           )}
         </aside>

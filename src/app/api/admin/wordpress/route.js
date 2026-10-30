@@ -1,5 +1,5 @@
 import { adminClient } from "@/lib/adminAuth";
-import { WORDPRESS_SITE, checkLogin, listInbox, postForImport, wordpressLogin } from "@/lib/wordpressInbox";
+import { WORDPRESS_SITE, checkLogin, listInbox, postForImport, trashPost, wordpressLogin } from "@/lib/wordpressInbox";
 
 const fail = (error) => Response.json({ error: error.message }, { status: error.status || 502 });
 
@@ -7,6 +7,7 @@ const fail = (error) => Response.json({ error: error.message }, { status: error.
 // { id } returns one converted to Markdown, which the admin page saves to
 // Supabase under the admin's own login. POST { connect } saves the
 // Application Password WordPress hands back from "Connect WordPress".
+// DELETE { id } moves that WordPress post to its Trash.
 export async function GET(request) {
   const { denied, db } = await adminClient(request);
   if (denied) return denied;
@@ -60,6 +61,21 @@ export async function POST(request) {
   if (!login) return Response.json({ error: "WordPress isn't connected yet." }, { status: 503 });
   try {
     return Response.json({ post: await postForImport(login, id) });
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export async function DELETE(request) {
+  const { denied, db } = await adminClient(request);
+  if (denied) return denied;
+  const { id } = await request.json().catch(() => ({}));
+  if (!Number.isInteger(id) || id <= 0) return Response.json({ error: "Bad request" }, { status: 400 });
+  const login = await wordpressLogin(db);
+  if (!login) return Response.json({ error: "WordPress isn't connected yet." }, { status: 503 });
+  try {
+    await trashPost(login, id);
+    return Response.json({ trashed: true });
   } catch (error) {
     return fail(error);
   }
