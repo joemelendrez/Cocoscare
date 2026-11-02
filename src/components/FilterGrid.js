@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ScrollRow from "@/components/ScrollRow";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { PickCard, PostCard } from "@/components/Cards";
@@ -9,7 +10,13 @@ import { CATEGORIES, SHOP_SECTIONS } from "@/lib/content";
 
 function Chips({ options, value, onChange, label }) {
   return (
-    <div role="group" aria-label={label} className="flex flex-wrap justify-center gap-2.5">
+    <ScrollRow
+      className="-mx-4 sm:mx-0"
+      rowClassName="gap-2.5 px-4 py-1.5 sm:flex-wrap sm:justify-center sm:px-0"
+      rowProps={{ role: "group", "aria-label": label }}
+      activeKey={value}
+      snap="chips"
+    >
       {options.map((o) => {
         const active = o.key === value;
         return (
@@ -18,7 +25,7 @@ function Chips({ options, value, onChange, label }) {
             type="button"
             aria-pressed={active}
             onClick={() => onChange(o.key)}
-            className="relative rounded-full border-[2.5px] border-ink px-5 py-2 font-display text-lg tracking-wide transition-transform hover:-translate-y-0.5"
+            className="relative shrink-0 whitespace-nowrap rounded-full border-[2.5px] border-ink px-5 py-2 font-display text-lg tracking-wide transition-transform hover:-translate-y-0.5"
           >
             {active && (
               <motion.span
@@ -31,7 +38,7 @@ function Chips({ options, value, onChange, label }) {
           </button>
         );
       })}
-    </div>
+    </ScrollRow>
   );
 }
 

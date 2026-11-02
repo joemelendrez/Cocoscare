@@ -1,3 +1,4 @@
+import ScrollRow from "@/components/ScrollRow";
 import { Heart } from "@/components/Doodles";
 
 // A post's comparison table (see src/lib/compareTable.js for the block it
@@ -50,11 +51,11 @@ export default function ComparisonTable({ table, id }) {
       </h2>
 
       {/* Phones: one card per product, swipe sideways. */}
-      <div className="-mx-4 mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:hidden">
+      <ScrollRow className="-mx-4 mt-5 sm:hidden" rowClassName="gap-4 px-4 pb-3" snap="cards" dots dotClassName="bg-ink">
         {products.map((p, i) => (
           <article
             key={i}
-            className={`flex w-[82%] shrink-0 snap-center flex-col rounded-[1.5rem] border-[2.5px] border-ink p-4 ${p.top ? "bg-blush shadow-[4px_4px_0_var(--pink)]" : "bg-paper"}`}
+            className={`flex w-[82%] shrink-0 flex-col rounded-[1.5rem] border-[2.5px] border-ink p-4 ${p.top ? "bg-blush shadow-[4px_4px_0_var(--pink)]" : "bg-paper"}`}
           >
             {p.top && (
               <span className="mb-2">
@@ -78,7 +79,7 @@ export default function ComparisonTable({ table, id }) {
             )}
           </article>
         ))}
-      </div>
+      </ScrollRow>
       {products.length > 1 && (
         <p className="text-center text-xs font-semibold text-ink/50 sm:hidden">Swipe to compare all {products.length} →</p>
       )}

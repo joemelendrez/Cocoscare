@@ -499,3 +499,41 @@ body {
   font-size: 0.875rem;
   color: color-mix(in srgb, var(--ink) 60%, transparent);
 }
+
+/* ─── Side-scrolling rows (components/ScrollRow.js, PillTrack.js) ───
+   ‹ › buttons only on screens with a mouse, shown on hover once that side
+   has more to see. Colors: --sr-arrow-bg / --sr-arrow-fg. */
+.scroll-row-track { scrollbar-width: none; }
+.scroll-row-track::-webkit-scrollbar { display: none; }
+.scroll-row-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: none;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--sr-arrow-bg, #fff);
+  color: var(--sr-arrow-fg, #111);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 6px 16px -6px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) scale(0.9);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.scroll-row-arrow-sm { width: 26px; height: 26px; }
+@media (hover: hover) and (pointer: fine) {
+  .scroll-row-arrow { display: flex; }
+  .scroll-row:hover > .scroll-row-arrow[data-show] { opacity: 1; pointer-events: auto; transform: translateY(-50%) scale(1); }
+}
+.scroll-row:has(> .scroll-row-arrow + .scroll-row-arrow + div) > .scroll-row-arrow { top: calc(50% - 10px); }
+.scroll-row-snap-chips { scroll-snap-type: x proximity; }
+.scroll-row-snap-chips > :not([aria-hidden="true"]) { scroll-snap-align: start; }
+.scroll-row-snap-cards { scroll-snap-type: x mandatory; scroll-padding-inline: 16px; }
+.scroll-row-snap-cards > * { scroll-snap-align: start; }
+
+/* The first item snaps to the very start (its margin is clamped to 0), so a
+   row with side padding isn't nudged a few px in, showing a left fade at rest. */
+[class*="scroll-row-snap-"] > :first-child { scroll-margin-inline-start: 100vw; }
