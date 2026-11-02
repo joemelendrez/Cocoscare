@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ScrollRow from "@/components/ScrollRow";
 import { AnimatePresence, motion } from "framer-motion";
 import SyncNote from "@/components/SyncNote";
 import RecipeFinder from "@/components/tools/RecipeFinder";
@@ -392,10 +393,12 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
 
               <div className="mt-5">
                 <h3 className="font-display text-lg tracking-wide">Quick add</h3>
-                <div
-                  className="-mx-1 mt-1.5 flex gap-1.5 overflow-x-auto px-1 pb-1"
-                  role="tablist"
-                  aria-label="Quick add groups"
+                <ScrollRow
+                  className="-mx-1 mt-1.5"
+                  rowClassName="gap-1.5 px-1 pb-1"
+                  rowProps={{ role: "tablist", "aria-label": "Quick add groups" }}
+                  activeKey={staple.label}
+                  snap="chips"
                 >
                   {STAPLES.map((g) => {
                     const on = g.label === staple.label;
@@ -414,7 +417,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                       </button>
                     );
                   })}
-                </div>
+                </ScrollRow>
                 <div role="tabpanel" aria-label={staple.label}>
                   <Chips items={staple.items} onList={onList} onAdd={addLine} />
                 </div>
@@ -588,7 +591,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
               </div>
 
               {byAisle && groups.length > 1 && (
-                <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Aisle">
+                <ScrollRow className="-mx-1 mt-3" rowClassName="gap-1.5 px-1 pb-1" rowProps={{ role: "group", "aria-label": "Aisle" }} activeKey={aisle} snap="chips">
                   {[{ aisle: null, items }, ...groups].map((g) => {
                     const key = g.aisle?.key || null;
                     const on = aisle === key;
@@ -612,7 +615,7 @@ export default function GroceryList({ instacart, walmartLink, recipes = [] }) {
                       </button>
                     );
                   })}
-                </div>
+                </ScrollRow>
               )}
 
               {shown.length === 0 && (
